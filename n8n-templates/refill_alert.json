@@ -1,0 +1,60 @@
+{
+    "name": "Predictive Refill Alert (Functional Twilio)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "refill-alert",
+                "options": {}
+            },
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "refill-trigger-002"
+        },
+        {
+            "parameters": {
+                "operation": "toPhone",
+                "to": "={{ $node[\"Webhook Trigger\"].json[\"body\"][\"phone\"] }}",
+                "message": "=Hi! Your {{ $node[\"Webhook Trigger\"].json[\"body\"][\"medicineName\"] }} will run out in {{ $node[\"Webhook Trigger\"].json[\"body\"][\"daysLeft\"] }} days. Replenish now?",
+                "options": {}
+            },
+            "name": "Twilio SMS",
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "content": "### FUNCTIONAL TWILIO WORKFLOW\n1. Double-click the 'Twilio SMS' node.\n2. Click 'Create New' in Credentials.\n3. Enter your Twilio SID, Auth Token and Phone Number.\n4. Save and Activate."
+            },
+            "name": "Instructions",
+            "type": "n8n-nodes-base.stickyNote",
+            "typeVersion": 1,
+            "position": [
+                220,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Twilio SMS",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
