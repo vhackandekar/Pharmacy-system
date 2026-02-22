@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../services/api';
 
 const Register = () => {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,18 +18,43 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    
     setIsLoading(true);
-    // Simulate OTP generation and notify user
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      // Call backend registration
+      await authAPI.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role.toUpperCase(), // Normalize to USER/ADMIN
+        phone: "+91 98765 43210" // Default phone for now
+      });
+
+      // Prepare user data for context (though we might wait for login or OTP)
+      const userData = {
+        name: formData.fullName,
+        role: formData.role,
+        initials: formData.fullName.split(' ').map(name => name[0]).join('').toUpperCase()
+      };
+      
+      // Notify user and navigate
       setShowPopup(true);
-      // Wait for user to see popup then redirect
       setTimeout(() => {
+        setIsLoading(false);
         navigate('/verify-otp');
       }, 2000);
-    }, 1500);
+    } catch (error) {
+      console.error("Registration failed:", error);
+      alert(error.response?.data?.message || "Registration failed. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (

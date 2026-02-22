@@ -1,130 +1,187 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { 
+  BarChart3, Box, AlertTriangle, Users, TrendingUp, 
+  ArrowUpRight, ArrowDownRight, MoreVertical, Search,
+  Filter, Download, ShieldCheck, Plus
+} from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Users, Settings, Database, Server, Terminal, LogOut, ShieldCheck, Activity } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { Card, Badge, Button } from '../Component/UI';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-
+  const { theme } = useTheme();
+  
   const stats = [
-    { label: 'Total Systems', value: '458', icon: <Server className="w-5 h-5" />, trend: '+12%' },
-    { label: 'Active Admins', value: '24', icon: <Users className="w-5 h-5" />, trend: 'Stable' },
-    { label: 'Data Processing', value: '2.4 TB', icon: <Database className="w-5 h-5" />, trend: '+0.5%' },
+    { label: "Total Revenue", value: "$42,500", trend: "+12.5%", isUp: true },
+    { label: "Active Agents", value: "24", trend: "0%", isUp: true },
+    { label: "Low Stock Items", value: "12", trend: "-2", isUp: false },
+    { label: "Pending Prescriptions", value: "85", trend: "+14", isUp: true }
+  ];
+
+  const inventory = [
+    { id: "INV001", name: "Atorvastatin 40mg", stock: 1200, status: "Healthy", reorder: "2000" },
+    { id: "INV002", name: "Lisinopril 10mg", stock: 45, status: "Low Stock", reorder: "500" },
+    { id: "INV003", name: "Metformin 500mg", stock: 850, status: "Healthy", reorder: "1000" },
+    { id: "INV004", name: "Amoxicillin 250mg", stock: 12, status: "Critical", reorder: "300" }
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex relative overflow-hidden">
-      {/* Background Matrix Glow */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-900/10 blur-[150px] rounded-full opacity-50"></div>
-
-      {/* Sidebar */}
-      <aside className="w-64 bg-black/40 border-r border-purple-900/30 backdrop-blur-2xl p-6 space-y-8 relative z-20 hidden lg:block">
-        <div className="flex items-center space-x-3 mb-10">
-          <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-            <ShieldCheck className="w-6 h-6 text-purple-400" />
+    <div className="min-h-screen p-8 transition-colors duration-500 bg-brand-background text-brand-text-primary">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+        <div>
+          <div className="flex items-center space-x-3 mb-2">
+             <div className="p-2 bg-brand-primary/10 rounded-lg text-brand-primary">
+                <ShieldCheck size={20} />
+             </div>
+             <h2 className="text-3xl font-black tracking-tight underline decoration-brand-primary/30 underline-offset-8">Clinical Control Center</h2>
           </div>
-          <span className="font-bold text-lg tracking-tight">Admin OS</span>
+          <p className="text-sm opacity-60 font-bold uppercase tracking-widest text-brand-text-secondary">Inventory & Agent Monitoring</p>
         </div>
-
-        <nav className="space-y-4">
-           {[
-             { name: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, active: true },
-             { name: 'Users', icon: <Users className="w-4 h-4" /> },
-             { name: 'System Logs', icon: <Terminal className="w-4 h-4" /> },
-             { name: 'Settings', icon: <Settings className="w-4 h-4" /> }
-           ].map((item, i) => (
-             <div key={i} className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all ${item.active ? 'bg-purple-500/10 border border-purple-500/20 text-purple-300' : 'text-zinc-500 hover:text-zinc-300'}`}>
-               {item.icon}
-               <span className="text-sm font-medium">{item.name}</span>
-             </div>
-           ))}
-        </nav>
-
-        <div className="absolute bottom-8 left-6 right-6">
-           <button 
-             onClick={() => navigate('/')}
-             className="w-full flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/10 text-red-500 hover:bg-red-500/10 transition-all group"
-           >
-             <span className="text-xs font-bold uppercase tracking-widest">Terminate OS</span>
-             <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-           </button>
+        
+        <div className="flex items-center space-x-3">
+          <div className="relative text-brand-text-primary">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={16} />
+             <input 
+               type="text" 
+               placeholder="Search records..." 
+               className="pl-10 pr-4 py-2 text-xs font-bold rounded-xl border border-brand-border-color bg-brand-card focus:outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/50 transition-all" 
+             />
+          </div>
+          <Button variant="secondary" size="sm">
+             <Download size={16} className="mr-2" />
+             Export Data
+          </Button>
+          <Button variant="ghost" className="bg-brand-error/10 text-brand-error" onClick={() => window.location.href='/'}>Logout</Button>
         </div>
-      </aside>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto relative z-10">
-        <div className="max-w-5xl mx-auto space-y-8">
-           {/* Header */}
-           <div className="flex items-center justify-between bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-md">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        {stats.map((s, i) => (
+          <Card key={i} className="flex items-center justify-between group">
              <div>
-               <h1 className="text-3xl font-black italic uppercase tracking-tighter text-white">System Admin Control</h1>
-               <div className="flex items-center space-x-2 mt-1">
-                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                 <span className="text-[10px] uppercase font-bold text-green-500 tracking-[0.2em]">All Systems Operational</span>
-               </div>
-             </div>
-             <div className="flex items-center space-x-4">
-                <div className="text-right hidden sm:block">
-                  <p className="text-[10px] uppercase font-black text-white/40 tracking-widest">Last Update</p>
-                  <p className="text-xs font-mono text-purple-400">14:24:08 // MST</p>
-                </div>
-                <div className="w-12 h-12 rounded-full border border-purple-500/30 flex items-center justify-center bg-purple-500/10">
-                   <Activity className="w-6 h-6 text-purple-400" />
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{s.label}</p>
+                <h3 className="text-2xl font-black">{s.value}</h3>
+                <div className="flex items-center mt-1 space-x-1">
+                   {s.isUp ? <ArrowUpRight size={12} className="text-brand-success" /> : <ArrowDownRight size={12} className="text-brand-error" />}
+                   <span className={`text-[10px] font-bold ${s.isUp ? 'text-brand-success' : 'text-brand-error'}`}>{s.trend}</span>
                 </div>
              </div>
-           </div>
+             <div className="p-4 rounded-2xl transition-all duration-500 group-hover:scale-110 bg-brand-background">
+                {i === 0 ? <TrendingUp size={24} className="text-brand-primary" /> : i === 1 ? <Users size={24} className="text-brand-secondary" /> : i === 2 ? <Box size={24} className="text-brand-warning" /> : <ShieldCheck size={24} className="text-brand-accent" />}
+             </div>
+          </Card>
+        ))}
+      </div>
 
-           {/* Stats Grid */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             {stats.map((s, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="bg-[#0f0f0f] border border-white/5 p-6 rounded-2xl hover:border-purple-500/20 transition-all flex flex-col justify-between"
-                >
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="p-3 rounded-xl bg-zinc-900 text-purple-400 border border-white/5">
-                      {s.icon}
-                    </div>
-                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${s.trend === 'Stable' ? 'bg-zinc-800 text-zinc-400' : 'bg-purple-900/30 text-purple-400'}`}>
-                      {s.trend}
-                    </span>
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">{s.value}</h2>
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 mt-1 tracking-widest">{s.label}</p>
-                  </div>
-                </motion.div>
-             ))}
-           </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Inventory Master Table */}
+        <Card className="lg:col-span-2 overflow-hidden px-0 py-0">
+          <div className="p-6 border-b border-brand-border-color flex items-center justify-between">
+             <div className="flex items-center space-x-3">
+                <Box size={18} className="opacity-40" />
+                <h4 className="font-black text-sm uppercase tracking-widest">Inventory Management</h4>
+             </div>
+             <Button variant="secondary" size="sm">
+                <Plus size={14} className="mr-2" />
+                Add Item
+             </Button>
+          </div>
+          <div className="overflow-x-auto">
+             <table className="w-full text-left">
+                <thead>
+                  <tr className="text-[10px] font-black uppercase tracking-widest opacity-40 bg-brand-background">
+                    <th className="px-6 py-4">Item Name</th>
+                    <th className="px-6 py-4">Stock Level</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-center">Refill Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-brand-border-color">
+                  {inventory.map((item) => (
+                    <tr key={item.id} className="hover:bg-brand-hover-tint transition-colors group">
+                      <td className="px-6 py-5">
+                        <p className="text-sm font-bold">{item.name}</p>
+                        <p className="text-[10px] opacity-40 font-bold uppercase">SKU: {item.id}</p>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex flex-col space-y-1">
+                           <span className="text-sm font-bold">{item.stock} Units</span>
+                           <div className="w-32 h-1 bg-brand-border-color rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full ${item.status === 'Healthy' ? 'bg-brand-success' : item.status === 'Low Stock' ? 'bg-brand-warning' : 'bg-brand-error'}`} 
+                                style={{ width: `${Math.min((item.stock/item.reorder)*100, 100)}%` }} 
+                              />
+                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                         <Badge variant={item.status === 'Healthy' ? 'success' : item.status === 'Low Stock' ? 'warning' : 'error'}>
+                            {item.status}
+                         </Badge>
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                         <Button variant="secondary" size="sm" className="opacity-40 group-hover:opacity-100">Restock</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+             </table>
+          </div>
+        </Card>
 
-           {/* System Activity */}
-           <div className="bg-[#0f0f0f] border border-white/5 rounded-2xl overflow-hidden shrink-0">
-              <div className="p-5 border-b border-white/5 flex items-center justify-between bg-zinc-900/30">
-                 <h3 className="text-xs font-black uppercase tracking-widest text-white">Live System Activity</h3>
-                 <Terminal className="w-4 h-4 text-purple-400" />
+        {/* Analytics & High-Efficiency Logs */}
+        <div className="space-y-8">
+           <Card>
+              <div className="flex items-center justify-between mb-6">
+                 <h4 className="font-black text-sm uppercase tracking-widest opacity-40 text-brand-primary">Refill Analytics</h4>
+                 <BarChart3 size={18} className="opacity-40" />
               </div>
-              <div className="p-0 font-mono text-[11px] leading-relaxed">
-                 {[
-                   { cmd: 'SYS:ROOT_AUTH', status: 'GRANTED', time: '14:24:12' },
-                   { cmd: 'DDB:SYNC_CORE', status: 'INITIATED', time: '14:24:10' },
-                   { cmd: 'NETWORK:PROT_V4', status: 'STABLE', time: '14:24:08' },
-                   { cmd: 'VM:DOCKER_CONT_01', status: 'HEALTHY', time: '14:24:05' }
-                 ].map((log, i) => (
-                   <div key={i} className="flex items-center justify-between px-6 py-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-zinc-700 font-bold">{log.time}</span>
-                        <span className="text-purple-400 font-bold tracking-tight">{log.cmd}</span>
-                      </div>
-                      <span className={`font-black tracking-tighter ${log.status === 'GRANTED' ? 'text-green-500' : 'text-purple-300'}`}>{log.status}</span>
-                   </div>
+              <div className="flex items-end justify-between h-32 space-x-2">
+                 {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
+                    <motion.div 
+                      key={i} 
+                      initial={{ height: 0 }} 
+                      animate={{ height: `${h}%` }}
+                      className="w-full rounded-t-lg transition-all duration-1000 bg-brand-primary/20 hover:bg-brand-secondary" 
+                    />
                  ))}
               </div>
-           </div>
+              <div className="flex justify-between mt-4 text-[10px] font-black opacity-30 uppercase tracking-tighter">
+                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+              </div>
+           </Card>
+
+           <Card>
+              <h4 className="font-black text-sm uppercase tracking-widest opacity-40 mb-6 flex items-center">
+                 <AlertTriangle size={16} className="text-brand-warning mr-2" />
+                 Low-Efficiency Logs
+              </h4>
+              <div className="space-y-6">
+                {[
+                  { agent: "Bot-Alpha", action: "Failed STT Recognition", time: "10 mins ago" },
+                  { agent: "Medic-241", action: "Inventory Mismatch", time: "1 hour ago" },
+                  { agent: "Admin-X", action: "Bulk Refill #401 Approved", time: "2 hours ago" }
+                ].map((log, k) => (
+                  <div key={k} className="flex items-start justify-between">
+                     <div>
+                        <p className="text-xs font-bold">{log.agent}</p>
+                        <p className="text-[10px] opacity-40 mt-1 font-bold">{log.action}</p>
+                     </div>
+                     <span className="text-[10px] font-black opacity-20 whitespace-nowrap">{log.time}</span>
+                  </div>
+                ))}
+              </div>
+              <Button variant="ghost" className="w-full mt-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-40 hover:opacity-100">
+                 View System Terminal
+              </Button>
+           </Card>
         </div>
-      </main>
+
+      </div>
     </div>
   );
 };
