@@ -1,0 +1,104 @@
+{
+    "name": "Production Order Fulfillment + Admin Dashboard + SMS",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "pharmacy-order",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ],
+            "webhookId": "order-trigger-001"
+        },
+        {
+            "parameters": {
+                "operation": "toPhone",
+                "to": "={{ $node[\"Webhook\"].json[\"body\"][\"phone\"] }}",
+                "message": "=Order Confirmed! \ud83d\udce6\nYour Pharmacy Order #{{ $node[\"Webhook\"].json[\"body\"][\"orderId\"] }} has been received and is being prepared for fulfillment.",
+                "options": {}
+            },
+            "name": "Customer SMS",
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                400,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:5000/webhook/n8n/order",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "orderId",
+                            "value": "={{ $node[\"Webhook\"].json[\"body\"][\"orderId\"] }}"
+                        },
+                        {
+                            "name": "status",
+                            "value": "IN_WAREHOUSE"
+                        },
+                        {
+                            "name": "userId",
+                            "value": "={{ $node[\"Webhook\"].json[\"body\"][\"userId\"] }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Update DB + Create Admin Alert",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "toPhone",
+                "to": "+YOUR_ADMIN_PHONE_HERE",
+                "message": "=📢 ATTENTION ADMIN:\nNew Pharmacy Order received!\nOrder ID: {{ $node[\"Webhook\"].json[\"body\"][\"orderId\"] }}\nUser ID: {{ $node[\"Webhook\"].json[\"body\"][\"userId\"] }}\nPlease check the dashboard: http://localhost:3000/admin",
+                "options": {}
+            },
+            "name": "Admin SMS Alert",
+            "type": "n8n-nodes-base.twilio",
+            "typeVersion": 1,
+            "position": [
+                400,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Customer SMS",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Update DB + Create Admin Alert",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Admin SMS Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
