@@ -1,0 +1,68 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { AgentProvider } from './context/AgentContext';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Inventory from './pages/Inventory';
+import Orders from './pages/Orders';
+import Deliveries from './pages/Deliveries';
+import RefillAlerts from './pages/RefillAlerts';
+import AgentChat from './pages/AgentChat';
+import ManageVendors from './pages/ManageVendors';
+import Settings from './pages/Settings';
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <Layout>{children}</Layout>;
+}
+
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+      <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+      <Route path="/deliveries" element={<ProtectedRoute><Deliveries /></ProtectedRoute>} />
+      <Route path="/refill-alerts" element={<ProtectedRoute><RefillAlerts /></ProtectedRoute>} />
+      <Route path="/agent-chat" element={<ProtectedRoute><AgentProvider><AgentChat /></AgentProvider></ProtectedRoute>} />
+      <Route path="/manage-vendors" element={<ProtectedRoute><ManageVendors /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: '14px',
+              },
+              success: { iconTheme: { primary: '#22c55e', secondary: 'white' } },
+              error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
+            }}
+          />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
