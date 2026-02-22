@@ -80,7 +80,7 @@ class PredictiveRefillAgent {
                             phone: user.phone,
                             medicineName: pred.medicineName,
                             daysLeft: pred.daysLeft
-                        }).catch(err => console.error("n8n Refill Trigger Failed:", err.message));
+                        }, { timeout: 15000 }).catch(err => console.error("n8n Refill Trigger Failed:", err.message));
                     }
 
                     // Create notification in DB

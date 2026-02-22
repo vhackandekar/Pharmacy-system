@@ -71,10 +71,12 @@ exports.chat = async (req, res) => {
             const pendingConf = await OrderConfirmation.findOne({ userId, status: 'WAITING' }).sort({ createdAt: -1 });
 
             if (!pendingConf) {
+                const rawAnswer = "I don't see any pending orders to confirm. What would you like to buy?";
+                const translatedAnswer = await ConversationalAgent.translateMessage(rawAnswer, agentResult.language);
                 return res.json({
                     agentResponse: {
                         ...agentResult,
-                        answer: "I don't see any pending orders to confirm. What would you like to buy?"
+                        answer: translatedAnswer
                     },
                     workflowStatus: 'NO_PENDING_ORDER'
                 });
@@ -96,10 +98,13 @@ exports.chat = async (req, res) => {
 
             await langfuse.flushAsync();
 
+            const rawSuccessMsg = `Confirmed! I've placed your order for ${pendingConf.pendingOrderData.medicineName}. Your delivery is being scheduled.`;
+            const translatedSuccessMsg = await ConversationalAgent.translateMessage(rawSuccessMsg, agentResult.language);
+
             return res.json({
                 agentResponse: {
                     ...agentResult,
-                    answer: `Confirmed! I've placed your order for ${pendingConf.pendingOrderData.medicineName}. Your delivery is being scheduled.`
+                    answer: translatedSuccessMsg
                 },
                 orderId: orderResult.orderId,
                 refillAlerts: refillPredictions,
@@ -142,10 +147,12 @@ exports.chat = async (req, res) => {
 
         if (!safetyResult.isApproved) {
             await langfuse.flushAsync();
+            const rawSafetyMsg = `I cannot complete your order. Reasons: ${safetyResult.reasons.join(', ')}`;
+            const translatedSafetyMsg = await ConversationalAgent.translateMessage(rawSafetyMsg, agentResult.language);
             return res.json({
                 agentResponse: {
                     ...agentResult,
-                    answer: `I cannot complete your order. Reasons: ${safetyResult.reasons.join(', ')}`
+                    answer: translatedSafetyMsg
                 },
                 workflowStatus: 'REJECTED_BY_SAFETY'
             });
@@ -178,10 +185,13 @@ exports.chat = async (req, res) => {
 
         await langfuse.flushAsync();
 
+        const rawConfirmationMsg = `I've prepared an order for ${agentResult.quantity || 1}x ${agentResult.medicine_name}. The estimated total is ₹${estimatedPrice}. Should I go ahead and place this order for you?`;
+        const translatedConfirmationMsg = await ConversationalAgent.translateMessage(rawConfirmationMsg, agentResult.language);
+
         return res.json({
             agentResponse: {
                 ...agentResult,
-                answer: `I've prepared an order for ${agentResult.quantity || 1}x ${agentResult.medicine_name}. The estimated total is ₹${estimatedPrice}. Should I go ahead and place this order for you?`
+                answer: translatedConfirmationMsg
             },
             workflowStatus: 'AWAITING_CONFIRMATION'
         });

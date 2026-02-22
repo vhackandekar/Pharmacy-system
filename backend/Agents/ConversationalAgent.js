@@ -19,23 +19,17 @@ class ConversationalAgent {
     }
 
     async processMessage(userMessage, userHistory, availableMedicines, userPrescriptions) {
-        // --- STEP 0: LOCAL KEYWORD ROUTER (No API Cost) ---
-        const lowerMsg = userMessage.toLowerCase();
-
-        if (lowerMsg === "hi" || lowerMsg === "hello") {
-            return {
-                intent: "GENERAL_QUERY",
-                answer: "Hello! I'm your AI Pharmacy Assistant. How can I help you today?",
-                confidence: 1.0,
-                missing_fields: []
-            };
-        }
-
         const prompt = `
       You are the Conversational Agent for an Autonomous Agentic AI Pharmacy System.
       Your primary role is to understand user intent, extract structured data, and answer informational questions using user history.
       You MUST NOT perform safety checks, inventory updates, or order placement.
       
+      LANGUAGE INSTRUCTION:
+      - Detect the language of the 'User Message'.
+      - You MUST provide the 'answer' in the SAME LANGUAGE as the 'User Message'.
+      - For example, if the user asks in Marathi, your 'answer' must be in Marathi. If in Hindi, respond in Hindi.
+      - Keep the technical fields (intent, medicine_name, etc.) in English.
+
       INPUTS:
       1. User Message: "${userMessage}"
       2. User Context (Recent Orders): ${JSON.stringify(userHistory)}
@@ -46,7 +40,7 @@ class ConversationalAgent {
       1. Intent Detection: Classify the user message into exactly one of: 
          - ORDER_MEDICINE: User wants to buy a specific medicine.
          - REFILL: User wants to refill a previous order (implies looking at history).
-         - CONFIRM_ORDER: User says "yes", "confirm", "ok", "go ahead" or similar to a pending order confirmation prompt.
+         - CONFIRM_ORDER: User says "yes", "confirm", "ok", "go ahead", "हो", "हाँ" or similar to a pending order confirmation prompt.
          - SYMPTOM_QUERY: User mentions symptoms (e.g., "headache"). Provide suitable tablets or medicines according to your knowledge which is in stock and available in database.
          - HISTORY_QUERY: User asks about their past orders/medicines.
          - GENERAL_QUERY: General questions about the pharmacy/policies/etc.
@@ -68,7 +62,8 @@ class ConversationalAgent {
       Return ONLY a valid JSON object. No markdown.
       {
         "intent": "string",
-        "answer": "string",
+        "answer": "string (IN THE USER'S LANGUAGE)",
+        "language": "string (e.g., 'English', 'Marathi', 'Hindi')",
         "medicine_name": "string | null",
         "dosage": "string | null",
         "quantity": "number | null",
@@ -112,10 +107,12 @@ class ConversationalAgent {
 
         // --- STEP 3: HARD DETERMINISTIC FALLBACK (Last Resort) ---
         console.log("Using Hard Fallback logic...");
+        const lowerMsg = userMessage.toLowerCase();
         if (lowerMsg.includes('refill')) {
             return {
                 intent: "REFILL",
                 answer: "I see you want a refill. Looking at your history...",
+                language: "English",
                 medicine_name: userHistory.length > 0 ? (userHistory[0].items[0].medicineId.name || "Medicine") : null,
                 confidence: 0.8,
                 missing_fields: []
@@ -125,6 +122,7 @@ class ConversationalAgent {
         return {
             intent: "FALLBACK",
             answer: "I'm having trouble connecting to my AI engines. Please try again or type 'help'.",
+            language: "English",
             medicine_name: null,
             dosage: null,
             quantity: null,
@@ -132,6 +130,38 @@ class ConversationalAgent {
             confidence: 0,
             missing_fields: []
         };
+    }
+
+    async translateMessage(message, targetLanguage) {
+        if (!targetLanguage || targetLanguage.toLowerCase() === 'english') return message;
+
+        const prompt = `Translate the following pharmacy-related message into ${targetLanguage}. 
+        Keep medicine names and technical numbers as they are. 
+        Return ONLY the translated text, no explanation.
+        Message: "${message}"`;
+
+        if (this.groq) {
+            try {
+                const completion = await this.groq.chat.completions.create({
+                    messages: [{ role: "user", content: prompt }],
+                    model: "llama-3.3-70b-versatile",
+                });
+                return completion.choices[0].message.content.trim();
+            } catch (e) {
+                console.error("Groq Translation Failed:", e.message);
+            }
+        }
+
+        if (this.geminiModel) {
+            try {
+                const result = await this.geminiModel.generateContent(prompt);
+                return result.response.text().trim();
+            } catch (e) {
+                console.error("Gemini Translation Failed:", e.message);
+            }
+        }
+
+        return message; // Fallback to original
     }
 }
 
