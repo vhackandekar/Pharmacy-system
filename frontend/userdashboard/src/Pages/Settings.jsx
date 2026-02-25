@@ -125,14 +125,14 @@ const SettingsPage = () => {
   ];
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-12">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-10 md:space-y-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight mb-2">Settings</h2>
           <p className="text-sm opacity-60 font-medium">Customize your AI Pharmacy experience and preferences.</p>
         </div>
         {success && (
-          <Badge variant="success" className="animate-bounce">
+          <Badge variant="success" className="animate-bounce self-start md:self-center">
             <Check size={12} className="mr-1" /> Preferences Saved
           </Badge>
         )}

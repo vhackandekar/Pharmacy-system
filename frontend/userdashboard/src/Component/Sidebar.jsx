@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, MessageSquare, ClipboardList, Activity, 
-  Calendar, Settings, LogOut, Sun, Moon, User, ChevronRight, MapPin
+  Calendar, Settings, LogOut, Sun, Moon, User, ChevronRight, MapPin, FileText
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -27,19 +27,22 @@ const Sidebar = () => {
 
   const activeItem = menuItems.find(item => location.pathname === item.path) || menuItems[0];
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const sidebarWidth = isCollapsed ? 80 : 260;
+
   return (
     <>
       <motion.aside
         initial={false}
         animate={{ 
-          width: isCollapsed ? 80 : 260,
-          translateX: (typeof window !== 'undefined' && window.innerWidth < 1024) ? (isMobileOpen ? 0 : -260) : 0
+          width: sidebarWidth,
+          translateX: isMobile ? (isMobileOpen ? 0 : -260) : 0
         }}
         transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
         className={`
           fixed left-0 top-0 h-screen z-50 flex flex-col border-r border-brand-sidebar-border shadow-2xl
           ${theme === 'dark' ? 'glass-container' : 'bg-brand-sidebar-bg'} text-brand-sidebar-text
-          ${!isMobileOpen ? 'lg:flex' : 'flex'}
+          ${!isMobileOpen && isMobile ? 'hidden' : 'flex'}
         `}
       >
         {/* Logo Section */}

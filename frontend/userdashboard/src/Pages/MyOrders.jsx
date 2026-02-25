@@ -21,20 +21,20 @@ const MyOrders = () => {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-10 gap-6">
         <div>
           <h2 className="text-3xl font-black tracking-tight mb-2">My Orders</h2>
           <p className="text-sm opacity-60 font-medium">Manage your active deliveries and order history.</p>
         </div>
-        <div className="flex items-center space-x-3">
-           <Button variant="secondary" size="sm">
-              <Calendar size={16} className="mr-2" />
-              Filter by Date
+        <div className="flex items-center gap-2">
+           <Button variant="secondary" size="sm" className="flex-1 md:flex-none">
+              <Calendar size={16} className="md:mr-2" />
+              <span className="hidden md:inline">Filter by Date</span>
            </Button>
-           <Button variant="primary" size="sm">
-              <Package size={16} className="mr-2" />
-              Download Report
+           <Button variant="primary" size="sm" className="flex-1 md:flex-none">
+              <Package size={16} className="md:mr-2" />
+              <span className="hidden md:inline">Download Report</span>
            </Button>
         </div>
       </div>

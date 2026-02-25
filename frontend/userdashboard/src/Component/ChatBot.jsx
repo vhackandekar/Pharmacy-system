@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Mic, Globe, User, Bot, Loader2, MoreVertical, X } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
+import { useTheme } from '../context/ThemeContext';
+import { useDeliveryProfile } from '../context/DeliveryProfileContext';
+import PaymentModal from './PaymentModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const ChatBot = ({ theme = 'dark' }) => {
+const ChatBot = () => {
+    const { theme } = useTheme();
+    const { profile } = useDeliveryProfile();
     const { currentMessages: messages, addMessageToActive, isTyping } = useChat();
     const [inputValue, setInputValue] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [selectedLanguage, setSelectedLanguage] = useState('English');
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [activeOrderData, setActiveOrderData] = useState(null);
     const messagesEndRef = useRef(null);
 
     // Auto-scroll to bottom of messages
@@ -16,7 +24,24 @@ const ChatBot = ({ theme = 'dark' }) => {
 
     useEffect(() => {
         scrollToBottom();
+        // Trigger payment modal on ORDER_PLACED or ORDER_PAYMENT intent
+        const lastMsg = messages[messages.length - 1];
+        const orderStatuses = ['ORDER_PLACED', 'ORDERED', 'SUCCESS'];
+        const isOrderIntent = lastMsg?.metadata?.intent === 'ORDER_PAYMENT' || lastMsg?.metadata?.intent === 'CONFIRM_ORDER';
+        
+        if (lastMsg?.role === 'ai' && (orderStatuses.includes(lastMsg?.workflowStatus) || isOrderIntent)) {
+            const timer = setTimeout(() => {
+                setActiveOrderData(lastMsg.metadata);
+                setIsPaymentModalOpen(true);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
     }, [messages, isTyping]);
+
+    const handlePaymentConfirm = () => {
+        setIsPaymentModalOpen(false);
+        // Additional logic if needed
+    };
 
     /**
      * SPEECH-TO-TEXT (STT) INTEGRATION POINT
@@ -220,6 +245,14 @@ const ChatBot = ({ theme = 'dark' }) => {
                         </form>
                     </div>
                 </footer>
+                
+                {/* Embedded Payment Modal */}
+                <PaymentModal 
+                    isOpen={isPaymentModalOpen}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    orderData={activeOrderData}
+                    onConfirm={handlePaymentConfirm}
+                />
             </div>
 
             {/* Global Scrollbar Styles (Inline as requested) */}

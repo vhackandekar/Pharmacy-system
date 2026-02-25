@@ -121,7 +121,8 @@ export const ChatProvider = ({ children }) => {
           id: Date.now() + Math.random(),
           role: 'ai',
           content: data.agentResponse.answer || data.agentResponse.response_message,
-          metadata: data.agentResponse,
+          metadata: { ...data.agentResponse, ...data }, // Merge everything including data.order
+          workflowStatus: data.workflowStatus,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 

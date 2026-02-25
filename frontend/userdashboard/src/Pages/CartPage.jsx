@@ -29,28 +29,28 @@ const CartPage = () => {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4"
+        className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-10 gap-6"
       >
         <div>
           <h2 className="text-3xl font-black tracking-tight mb-1">My Cart</h2>
           <p className="text-sm opacity-50 font-medium">{cart.length} item{cart.length !== 1 ? 's' : ''} ready to order</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {cart.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={handleClearCart} className="text-rose-500 hover:bg-rose-500/10">
-              <Trash2 size={15} className="mr-2" />
-              Clear Cart
+            <Button variant="secondary" size="sm" onClick={handleClearCart} className="flex-1 md:flex-none text-rose-500 hover:bg-rose-500/10">
+              <Trash2 size={15} className="md:mr-2" />
+              <span className="hidden md:inline">Clear Cart</span>
             </Button>
           )}
           {cart.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={() => navigate('/chat')}>
-              <Sparkles size={15} className="mr-2" />
-              Browse More
+            <Button variant="secondary" size="sm" onClick={() => navigate('/chat')} className="flex-1 md:flex-none">
+              <Sparkles size={15} className="md:mr-2" />
+              <span className="hidden md:inline">Browse More</span>
             </Button>
           )}
         </div>

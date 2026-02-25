@@ -11,7 +11,7 @@ import ChatPage from './Pages/ChatPage';
 import CartPage from './Pages/CartPage';
 import SettingsPage from './Pages/Settings';
 import HistoryPage from './Pages/History';
-import UploadPage from './Pages/Upload';
+
 import DeliveryProfilePage from './Pages/DeliveryProfilePage';
 
 import { AuthProvider } from './context/AuthContext';
@@ -33,7 +33,7 @@ function App() {
         <Route path="/orders" element={<PrivateRoute><Layout><MyOrders /></Layout></PrivateRoute>} />
         <Route path="/cart" element={<PrivateRoute><Layout><CartPage /></Layout></PrivateRoute>} />
         <Route path="/history" element={<PrivateRoute><Layout><HistoryPage /></Layout></PrivateRoute>} />
-        <Route path="/upload" element={<PrivateRoute><Layout><UploadPage /></Layout></PrivateRoute>} />
+
         <Route path="/profile" element={<PrivateRoute><Layout><DeliveryProfilePage /></Layout></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Layout><SettingsPage /></Layout></PrivateRoute>} />
 

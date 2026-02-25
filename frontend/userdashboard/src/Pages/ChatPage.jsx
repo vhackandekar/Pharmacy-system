@@ -9,7 +9,9 @@ import { useTheme } from '../context/ThemeContext';
 import { useOrders } from '../context/OrderContext';
 import { useSidebar } from '../context/SidebarContext';
 import { useChat } from '../context/ChatContext';
+import { useDeliveryProfile } from '../context/DeliveryProfileContext';
 import { Button, ChatBubble, Badge, Toast } from '../Component/UI';
+import PaymentModal from '../Component/PaymentModal';
 
 const ChatPage = () => {
   const { theme, language } = useTheme();
@@ -26,6 +28,8 @@ const ChatPage = () => {
     isTyping
   } = useChat();
 
+  const { profile } = useDeliveryProfile();
+
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -36,6 +40,8 @@ const ChatPage = () => {
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const [shouldDiscard, setShouldDiscard] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [activeOrderData, setActiveOrderData] = useState(null);
 
   const { setLanguage } = useTheme();
 
@@ -115,7 +121,25 @@ const ChatPage = () => {
 
   useEffect(() => {
     scrollToBottom();
+    // Detect ORDER_PLACED or ORDERED to show modal
+    const lastMsg = messages[messages.length - 1];
+    const orderStatuses = ['ORDER_PLACED', 'ORDERED', 'SUCCESS'];
+    const isOrderIntent = lastMsg?.metadata?.intent === 'ORDER_PAYMENT' || lastMsg?.metadata?.intent === 'CONFIRM_ORDER';
+    
+    if (lastMsg?.role === 'ai' && (orderStatuses.includes(lastMsg?.workflowStatus) || isOrderIntent)) {
+      const timer = setTimeout(() => {
+        setActiveOrderData(lastMsg.metadata);
+        setIsPaymentModalOpen(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
   }, [messages, isTyping]);
+
+  const handlePaymentConfirm = () => {
+    setIsPaymentModalOpen(false);
+    setToastMsg("Payment verified! Your order is being processed.");
+    setShowToast(true);
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -134,11 +158,11 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-brand-background">
+    <div className="flex h-[calc(100vh-73px)] overflow-hidden bg-brand-background">
       
       {/* 1. Left: Conversation History (Collapsible Sidebar) */}
       <motion.div
-        animate={{ width: sidebarCollapsed ? 0 : 280 }}
+        animate={{ width: sidebarCollapsed ? 0 : 260 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className={`flex-shrink-0 overflow-hidden flex flex-col hidden xl:flex border-r ${
           theme === 'dark'
@@ -146,7 +170,7 @@ const ChatPage = () => {
             : 'bg-gradient-to-b from-blue-50 via-indigo-50/50 to-white border-indigo-100'
         }`}
       >
-        <div className="w-[280px] flex flex-col h-full">
+        <div className="w-[260px] flex flex-col h-full">
           {/* Sidebar Header */}
           <div className={`px-4 pt-5 pb-3 border-b ${theme === 'dark' ? 'border-white/5' : 'border-slate-200'}`}>
             <button 
@@ -214,7 +238,7 @@ const ChatPage = () => {
       <div className="flex-1 flex flex-col relative bg-transparent">
         
         {/* Chat Header */}
-        <div className="px-8 py-4 flex items-center justify-between border-b border-brand-border-color bg-brand-card/50 backdrop-blur-sm">
+        <div className="px-4 md:px-8 py-3 md:py-4 flex items-center justify-between border-b border-brand-border-color bg-brand-card/50 backdrop-blur-sm">
           <div className="flex items-center space-x-3">
              {/* Sidebar toggle button visible on xl+ */}
              <button
@@ -278,7 +302,7 @@ const ChatPage = () => {
         </div>
 
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto p-8 no-scrollbar scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar scroll-smooth">
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg) => (
               <ChatBubble 
@@ -301,7 +325,7 @@ const ChatPage = () => {
         </div>
 
         {/* Bottom Input Area */}
-        <div className="p-6 bg-brand-background border-t border-brand-border-color">
+        <div className="p-4 md:p-6 bg-brand-background border-t border-brand-border-color">
           <div className="max-w-3xl mx-auto relative">
             
             {/* Voice Recording Overlay */}
@@ -404,6 +428,12 @@ const ChatPage = () => {
             </form>
           </div>
         </div>
+        <PaymentModal 
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          orderData={activeOrderData}
+          onConfirm={handlePaymentConfirm}
+        />
       </div>
 
       <Toast 

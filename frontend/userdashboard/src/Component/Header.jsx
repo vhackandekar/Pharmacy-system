@@ -22,9 +22,9 @@ const Header = () => {
   };
 
   return (
-    <header className={`sticky top-0 z-40 px-8 ${isChat ? 'py-2' : 'py-5'} border-b border-brand-border-color transition-all duration-300 ${theme === 'dark' ? 'glass-container' : 'bg-white shadow-sm'}`}>
+    <header className={`sticky top-0 z-40 px-4 md:px-8 ${isChat ? 'py-2' : 'py-3 md:py-5'} border-b border-brand-border-color transition-all duration-300 ${theme === 'dark' ? 'glass-container' : 'bg-white shadow-sm'}`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           {/* Sidebar Toggle Button */}
           <button
             onClick={() => {
@@ -34,33 +34,24 @@ const Header = () => {
                 toggleSidebar();
               }
             }}
-            className="p-2.5 rounded-xl transition-all duration-300 active:scale-90 text-brand-text-primary hover:bg-brand-hover-tint"
+            className="p-2 rounded-xl transition-all duration-300 active:scale-90 text-brand-text-primary hover:bg-brand-hover-tint"
           >
             <div className={`transition-transform duration-300 ${isCollapsed ? 'rotate-180' : 'rotate-0'}`}>
-              {isCollapsed ? <PanelLeft size={22} /> : <PanelLeftClose size={22} />}
+              {isCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
             </div>
           </button>
 
-          {/* Search Bar */}
-          <div className="relative group hidden md:block">
-            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-brand-text-secondary group-focus-within:text-brand-primary' : 'text-slate-400 group-focus-within:text-brand-primary'}`} size={18} />
-            <input
-              type="text"
-              placeholder="Search prescriptions, orders..."
-              className={`pl-12 pr-6 py-2.5 w-[320px] rounded-[1rem] text-sm font-medium border transition-all placeholder:opacity-40 focus:outline-none focus:ring-4 ${theme === 'dark' ? 'bg-white/5 border-white/10 focus:ring-brand-primary/20 focus:border-brand-primary/50' : 'bg-slate-50 border-slate-200 focus:ring-blue-500/10 focus:border-blue-500/50'}`}
-            />
-          </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {/* Cart Icon */}
           <button
             onClick={() => navigate('/cart')}
-            className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${theme === 'dark' ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+            className={`relative p-2 rounded-xl transition-all active:scale-95 ${theme === 'dark' ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
           >
-            <ShoppingCart size={22} />
+            <ShoppingCart size={20} />
             {cart.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-primary text-white text-[9px] font-black flex items-center justify-center shadow-lg shadow-brand-primary/30">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-brand-primary text-white text-[8px] font-black flex items-center justify-center shadow-lg shadow-brand-primary/30">
                 {cart.length}
               </span>
             )}
