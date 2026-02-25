@@ -8,24 +8,14 @@ import { useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
   const { theme } = useTheme();
-  const { cart, removeFromCart, updateCartQty, placeCartOrder, loading, fetchCart } = useOrders();
+  const { cart, removeFromCart, updateCartQty, placeCartOrder } = useOrders();
   const navigate = useNavigate();
 
   const total = cart.reduce((sum, item) => sum + (item.price || 0) * item.qty, 0);
 
-  const handlePlaceOrder = async () => {
-    if (window.confirm("Confirm order placement and proceed to payment?")) {
-      await placeCartOrder();
-    }
-  };
-
-  const handleClearCart = async () => {
-    if (window.confirm("Are you sure you want to clear your cart?")) {
-      // Manual removal for now since we don't have a clear endpoint
-      for (const item of cart) {
-        await removeFromCart(item.id);
-      }
-    }
+  const handlePlaceOrder = () => {
+    placeCartOrder();
+    navigate('/orders');
   };
 
   return (
@@ -40,20 +30,12 @@ const CartPage = () => {
           <h2 className="text-3xl font-black tracking-tight mb-1">My Cart</h2>
           <p className="text-sm opacity-50 font-medium">{cart.length} item{cart.length !== 1 ? 's' : ''} ready to order</p>
         </div>
-        <div className="flex items-center gap-3">
-          {cart.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={handleClearCart} className="text-rose-500 hover:bg-rose-500/10">
-              <Trash2 size={15} className="mr-2" />
-              Clear Cart
-            </Button>
-          )}
-          {cart.length > 0 && (
-            <Button variant="secondary" size="sm" onClick={() => navigate('/chat')}>
-              <Sparkles size={15} className="mr-2" />
-              Browse More
-            </Button>
-          )}
-        </div>
+        {cart.length > 0 && (
+          <Button variant="secondary" size="sm" onClick={() => navigate('/dashboard')}>
+            <Sparkles size={15} className="mr-2" />
+            Browse More
+          </Button>
+        )}
       </motion.div>
 
       {cart.length === 0 ? (
@@ -86,14 +68,16 @@ const CartPage = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0 }}
                   transition={{ duration: 0.25 }}
-                  className={`rounded-2xl p-5 flex items-center gap-5 border transition-all ${theme === 'dark'
-                    ? 'bg-white/3 border-white/8 hover:border-white/15'
-                    : 'bg-white border-slate-100 shadow-sm hover:shadow-md'
-                    }`}
+                  className={`rounded-2xl p-5 flex items-center gap-5 border transition-all ${
+                    theme === 'dark'
+                      ? 'bg-white/3 border-white/8 hover:border-white/15'
+                      : 'bg-white border-slate-100 shadow-sm hover:shadow-md'
+                  }`}
                 >
                   {/* Medicine Icon */}
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 ${theme === 'dark' ? 'bg-white/5' : 'bg-slate-50'
-                    }`}>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 ${
+                    theme === 'dark' ? 'bg-white/5' : 'bg-slate-50'
+                  }`}>
                     {item.image || '💊'}
                   </div>
 
@@ -102,14 +86,15 @@ const CartPage = () => {
                     <h4 className="font-black text-base leading-tight">{item.name}</h4>
                     <p className="text-xs opacity-40 font-bold mt-0.5">{item.dosage}</p>
                     <p className="text-sm font-black text-brand-primary mt-1">
-                      ₹{((item.price || 0) * item.qty).toFixed(2)}
-                      <span className="text-xs opacity-40 font-medium ml-1">(₹{(item.price || 0).toFixed(2)} each)</span>
+                      ${((item.price || 0) * item.qty).toFixed(2)}
+                      <span className="text-xs opacity-40 font-medium ml-1">(${(item.price || 0).toFixed(2)} each)</span>
                     </p>
                   </div>
 
                   {/* Quantity Controls */}
-                  <div className={`flex items-center rounded-xl border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'
-                    }`}>
+                  <div className={`flex items-center rounded-xl border overflow-hidden ${
+                    theme === 'dark' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'
+                  }`}>
                     <button
                       onClick={() => updateCartQty(item.id, item.qty - 1)}
                       className={`p-2.5 transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
@@ -143,18 +128,19 @@ const CartPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className={`rounded-2xl p-6 border sticky top-28 ${theme === 'dark'
-                ? 'bg-white/3 border-white/8'
-                : 'bg-white border-slate-100 shadow-lg shadow-slate-100'
-                }`}
+              className={`rounded-2xl p-6 border sticky top-28 ${
+                theme === 'dark'
+                  ? 'bg-white/3 border-white/8'
+                  : 'bg-white border-slate-100 shadow-lg shadow-slate-100'
+              }`}
             >
               <h3 className="font-black text-lg mb-6 tracking-tight">Order Summary</h3>
-
+              
               <div className="space-y-3 mb-6">
                 {cart.map(item => (
                   <div key={item.id} className="flex items-center justify-between text-sm">
                     <span className="opacity-60 font-medium truncate mr-2">{item.name} ×{item.qty}</span>
-                    <span className="font-black">₹{((item.price || 0) * item.qty).toFixed(2)}</span>
+                    <span className="font-black">${((item.price || 0) * item.qty).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -162,7 +148,7 @@ const CartPage = () => {
               <div className={`pt-4 border-t ${theme === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm opacity-50 font-medium">Subtotal</span>
-                  <span className="text-sm font-black">₹{total.toFixed(2)}</span>
+                  <span className="text-sm font-black">${total.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between mb-6">
                   <span className="text-sm opacity-50 font-medium">Delivery</span>
@@ -171,7 +157,7 @@ const CartPage = () => {
 
                 <div className="flex items-center justify-between mb-6">
                   <span className="font-black text-lg">Total</span>
-                  <span className="font-black text-xl text-brand-primary">₹{total.toFixed(2)}</span>
+                  <span className="font-black text-xl text-brand-primary">${total.toFixed(2)}</span>
                 </div>
 
                 <Button
@@ -179,7 +165,6 @@ const CartPage = () => {
                   size="lg"
                   className="w-full"
                   onClick={handlePlaceOrder}
-                  loading={loading}
                 >
                   <Package size={16} className="mr-2" />
                   Place Order

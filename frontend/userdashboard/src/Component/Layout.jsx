@@ -3,17 +3,13 @@ import { useTheme } from '../context/ThemeContext';
 import { useSidebar } from '../context/SidebarContext';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { useOrders } from '../context/OrderContext';
-import { useChat } from '../context/ChatContext';
 
 const Layout = ({ children }) => {
   const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
-  const { addMessageToActive } = useChat();
 
   return (
     <div className="min-h-screen flex transition-colors duration-500 bg-brand-background text-brand-text-primary">
-
-
+      
       {/* Sidebar Overlay for Mobile */}
       <Sidebar />
 
@@ -30,7 +26,7 @@ const Layout = ({ children }) => {
 
       {/* Mobile Backdrop */}
       {isMobileOpen && (
-        <div
+        <div 
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={closeMobileSidebar}
         />

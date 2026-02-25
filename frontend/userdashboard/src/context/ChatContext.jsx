@@ -1,85 +1,77 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
-import { useAuth } from './AuthContext';
-import { useOrders } from './OrderContext';
 
 const ChatContext = createContext();
 
 export const useChat = () => useContext(ChatContext);
 
 export const ChatProvider = ({ children }) => {
-  const { user } = useAuth();
-  const { fetchCart, fetchOrders, fetchNotifications } = useOrders();
-
-  // Storage keys
-  const HISTORY_KEY = user ? `chat-history-${user.id}` : null;
-  const ACTIVE_CHAT_KEY = user ? `active-chat-${user.id}` : null;
-  const ACTIVE_SESSION_KEY = user ? `active-session-id-${user.id}` : null;
-
-  const defaultMessages = [
-    { id: 1, role: 'ai', content: "Hello! I'm Dr. Saahil, your personal AI Pharmacist. I’m here to help you manage your health and prescriptions. How can I assist you today?", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-  ];
-
   // sessions: [{ id, title, messages, timestamp }]
-  const [sessions, setSessions] = useState([]);
-  const [currentMessages, setCurrentMessages] = useState(defaultMessages);
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
-
-  // Load user-specific data whenever user changes
-  useEffect(() => {
-    if (user && HISTORY_KEY) {
-      // Load sessions
-      const savedHistory = localStorage.getItem(HISTORY_KEY);
-      setSessions(savedHistory ? JSON.parse(savedHistory) : []);
-
-      // Load active chat
-      const savedActive = localStorage.getItem(ACTIVE_CHAT_KEY);
-      setCurrentMessages(savedActive ? JSON.parse(savedActive) : defaultMessages);
-
-      // Load active session ID
-      const savedSessionId = localStorage.getItem(ACTIVE_SESSION_KEY);
-      setCurrentSessionId(savedSessionId || null);
-    } else {
-      // Clear state on logout
-      setSessions([]);
-      setCurrentMessages(defaultMessages);
-      setCurrentSessionId(null);
+  const [sessions, setSessions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chat-history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Error loading chat history:", e);
+      return [];
     }
-  }, [user?.id]);
+  });
+
+  // currentMessages: used for the main dashboard display
+  const [currentMessages, setCurrentMessages] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('active-chat');
+      const defaultMsg = [
+        { id: 1, role: 'ai', content: "Hello! I'm your AI Pharmacist. How can I help you today?", timestamp: "10:00 AM" }
+      ];
+      return saved ? JSON.parse(saved) : defaultMsg;
+    } catch (e) {
+      console.error("Error loading active chat:", e);
+      return [
+        { id: 1, role: 'ai', content: "Hello! I'm your AI Pharmacist. How can I help you today?", timestamp: "10:00 AM" }
+      ];
+    }
+  });
+
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    const id = sessionStorage.getItem('active-session-id');
+    return id === 'null' ? null : id;
+  });
 
   // Persist sessions to localStorage
   useEffect(() => {
-    if (user && HISTORY_KEY) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(sessions));
-    }
-  }, [sessions, HISTORY_KEY]);
+    localStorage.setItem('chat-history', JSON.stringify(sessions));
+  }, [sessions]);
 
-  // Persist active chat to localStorage
+  // Persist active chat to sessionStorage
   useEffect(() => {
-    if (user && ACTIVE_CHAT_KEY) {
-      localStorage.setItem(ACTIVE_CHAT_KEY, JSON.stringify(currentMessages));
-      if (currentSessionId) {
-        localStorage.setItem(ACTIVE_SESSION_KEY, currentSessionId);
-      } else {
-        localStorage.removeItem(ACTIVE_SESSION_KEY);
-      }
+    sessionStorage.setItem('active-chat', JSON.stringify(currentMessages));
+    if (currentSessionId) {
+      sessionStorage.setItem('active-session-id', currentSessionId);
     }
-  }, [currentMessages, currentSessionId, ACTIVE_CHAT_KEY]);
+  }, [currentMessages, currentSessionId]);
+
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Persistence of active state
+  useEffect(() => {
+    sessionStorage.setItem('active-chat', JSON.stringify(currentMessages));
+    if (currentSessionId) {
+      sessionStorage.setItem('active-session-id', currentSessionId);
+    }
+  }, [currentMessages, currentSessionId]);
 
   // Unified Session Management:
-  // Sync currentMessages into the sessions list whenever messages change
+  // 1. Create sessions for new conversations automatically
+  // 2. Keep existing sessions in sync with currentMessages
+  // 3. Persist sessions list to localStorage
   useEffect(() => {
-    if (currentMessages.length > 1 && currentSessionId) {
-      setSessions(prev =>
-        prev.map(s => s.id === currentSessionId ? { ...s, messages: currentMessages } : s)
-      );
-    }
-  }, [currentMessages]);
+    localStorage.setItem('chat-history', JSON.stringify(sessions));
 
-  useEffect(() => {
-    if (currentMessages.length > 1 && !currentSessionId) {
-      // Auto-create session on first user interaction if not in one
+    if (currentMessages.length <= 1) return;
+
+    if (!currentSessionId) {
+      // Auto-create session on first user interaction
       const firstUserMsg = currentMessages.find(m => m.role === 'user');
       if (firstUserMsg) {
         const newId = Date.now().toString();
@@ -89,12 +81,20 @@ export const ChatProvider = ({ children }) => {
           messages: currentMessages,
           timestamp: new Date().toISOString()
         };
-
-        setSessions(prev => [newSession, ...prev]);
+        
+        setSessions(prev => {
+          if (prev.some(s => s.id === newId)) return prev;
+          return [newSession, ...prev];
+        });
         setCurrentSessionId(newId);
       }
+    } else {
+      // Sync currentMessages to the matching session in the list
+      setSessions(prev => 
+        prev.map(s => s.id === currentSessionId ? { ...s, messages: currentMessages } : s)
+      );
     }
-  }, [currentMessages, currentSessionId]);
+  }, [currentMessages, currentSessionId, sessions.length]); // sessions.length as a light trigger for persistence
 
   const addMessageToActive = async (msg) => {
     // Atomic update with duplicate check
@@ -106,39 +106,26 @@ export const ChatProvider = ({ children }) => {
     if (msg.role === 'user') {
       setIsTyping(true);
       try {
-        // Send history as an array of message objects {role, content}
-        const historyData = currentMessages.map(m => ({
-          role: m.role,
-          content: m.content
-        }));
-
-        const { data } = await api.post('/agent/chat', {
+        const { data } = await api.post('/agent/chat', { 
           userMessage: msg.content,
-          userHistory: historyData
+          history: currentMessages
         });
 
         const aiMsg = {
           id: Date.now() + Math.random(),
           role: 'ai',
-          content: data.agentResponse.answer || data.agentResponse.response_message,
-          metadata: data.agentResponse,
+          content: data.agentResponse.response_message || data.agentResponse.answer,
+          metadata: data.agentResponse, 
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 
         addMessageToActive(aiMsg);
-
-
-
-        // Refresh Cart, Orders, and Notifications if the AI performed an action
-        fetchCart();
-        fetchOrders();
-        fetchNotifications();
       } catch (error) {
         console.error("AI Assistant Error:", error);
         addMessageToActive({
           id: Date.now() + 1000,
           role: 'ai',
-          content: "I'm sorry, I'm having trouble connecting to my knowledge base. Please ensure your AI API keys (Groq/Gemini) are valid and your server is running.",
+          content: "I'm sorry, I'm having trouble connecting to my knowledge core. Please ensure your OpenAI API key is valid and you have credits.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         });
       } finally {
@@ -148,10 +135,11 @@ export const ChatProvider = ({ children }) => {
   };
 
   const startNewChat = () => {
-    setCurrentMessages(defaultMessages);
+    setCurrentMessages([
+      { id: Date.now(), role: 'ai', content: "Hello! I'm your AI Pharmacist. How can I help you today?", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    ]);
     setCurrentSessionId(null);
-    if (ACTIVE_SESSION_KEY) localStorage.removeItem(ACTIVE_SESSION_KEY);
-    if (ACTIVE_CHAT_KEY) localStorage.removeItem(ACTIVE_CHAT_KEY);
+    sessionStorage.removeItem('active-session-id');
   };
 
   const loadSession = (id) => {
@@ -171,19 +159,17 @@ export const ChatProvider = ({ children }) => {
 
   const clearAllHistory = () => {
     setSessions([]);
-    if (HISTORY_KEY) localStorage.removeItem(HISTORY_KEY);
-    if (ACTIVE_CHAT_KEY) localStorage.removeItem(ACTIVE_CHAT_KEY);
-    if (ACTIVE_SESSION_KEY) localStorage.removeItem(ACTIVE_SESSION_KEY);
+    localStorage.removeItem('chat-history');
     startNewChat();
   };
 
   return (
-    <ChatContext.Provider value={{
-      sessions,
-      currentMessages,
-      addMessageToActive,
-      startNewChat,
-      loadSession,
+    <ChatContext.Provider value={{ 
+      sessions, 
+      currentMessages, 
+      addMessageToActive, 
+      startNewChat, 
+      loadSession, 
       deleteSession,
       clearAllHistory,
       isTyping

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { ChevronDown, X, Check, Bell } from 'lucide-react';
 
-export const Button = ({ children, variant = 'primary', size = 'md', className = '', loading = false, disabled = false, ...props }) => {
+export const Button = ({ children, variant = 'primary', size = 'md', className = '', ...props }) => {
   const { theme } = useTheme();
-
+  
   const baseStyles = "inline-flex items-center justify-center font-bold rounded-xl transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
-
+  
   const variants = {
     primary: "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 hover:bg-brand-secondary hover:shadow-brand-secondary/30",
     secondary: "bg-brand-card border-2 border-brand-border-color text-brand-primary hover:bg-brand-hover-tint shadow-sm typography-body",
@@ -21,27 +21,18 @@ export const Button = ({ children, variant = 'primary', size = 'md', className =
   };
 
   return (
-    <button
+    <button 
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-      disabled={loading || disabled}
       {...props}
     >
-      {loading ? (
-        <>
-          <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Processing...
-        </>
-      ) : children}
+      {children}
     </button>
   );
 };
 
 export const Card = ({ children, className = '', hover = false }) => {
   const { theme } = useTheme();
-
+  
   return (
     <div className={`
       rounded-[2rem] p-8 transition-all duration-500 border transition-all
@@ -56,7 +47,7 @@ export const Card = ({ children, className = '', hover = false }) => {
 
 export const Badge = ({ children, variant = 'info', className = '' }) => {
   const { theme } = useTheme();
-
+  
   const variants = {
     info: theme === 'dark' ? "bg-blue-500/20 text-blue-400 border border-blue-500/20" : "bg-blue-50 text-blue-600 border border-blue-100",
     success: theme === 'dark' ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-100",
@@ -76,7 +67,7 @@ export const Badge = ({ children, variant = 'info', className = '' }) => {
 
 export const Toggle = ({ enabled, onChange }) => {
   const { theme } = useTheme();
-
+  
   return (
     <button
       onClick={() => onChange(!enabled)}
@@ -144,30 +135,17 @@ export const Toast = ({ message, type = 'success', visible, onClose }) => {
 
 export const ChatBubble = ({ role, content, timestamp }) => {
   const isUser = role === 'user';
-  const { theme } = useTheme();
 
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-6 group animate-in slide-in-from-bottom-2 duration-500`}>
       <div className={`
-        relative max-w-[80%] rounded-3xl p-5 transition-all duration-300
-        ${isUser
-          ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20 rounded-tr-sm'
-          : 'bg-brand-card border border-brand-border-color text-brand-text-primary shadow-xl shadow-brand-primary/5 rounded-tl-sm'
+        max-w-[80%] rounded-3xl p-5 transition-all duration-300
+        ${isUser 
+          ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' 
+          : 'bg-brand-card border border-brand-border-color text-brand-text-primary shadow-lg shadow-brand-primary/5'
         }
       `}>
-        <div className="flex flex-col space-y-1">
-          <p className="text-sm font-semibold leading-relaxed whitespace-pre-wrap">{content}</p>
-          <div className={`flex items-center space-x-2 mt-2 pt-2 border-t border-white/10 ${isUser ? 'justify-end' : 'justify-start'}`}>
-            <span className={`text-[10px] font-black uppercase tracking-widest opacity-40`}>
-              {timestamp || 'Just now'}
-            </span>
-            {!isUser && (
-              <span className="flex items-center text-[9px] font-black uppercase tracking-widest text-brand-primary">
-                <Check size={10} className="mr-1" /> Clinical Precision Core
-              </span>
-            )}
-          </div>
-        </div>
+        <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{content}</p>
       </div>
     </div>
   );
