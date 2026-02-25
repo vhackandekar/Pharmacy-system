@@ -83,12 +83,26 @@ class PredictiveRefillAgent {
                         }, { timeout: 15000 }).catch(err => console.error("n8n Refill Trigger Failed:", err.message));
                     }
 
-                    // Create notification in DB
-                    await new Notification({
-                        userId,
-                        type: 'refill',
-                        message: `Reminder: You will run out of ${pred.medicineName} in about ${pred.daysLeft} days. Don't forget to refill!`
-                    }).save();
+                    // Create notification in DB and emit via socket so UI updates in real-time
+                    try {
+                        const notif = await new Notification({
+                            userId,
+                            type: 'refill',
+                            message: `Reminder: You will run out of ${pred.medicineName} in about ${pred.daysLeft} days. Don't forget to refill!`
+                        }).save();
+
+                        if (global.io) {
+                            try {
+                                // Populate user info so admin sees customer details
+                                const NotificationModel = require('../schema/Notification');
+                                const populated = await NotificationModel.findById(notif._id).populate('userId', 'name email phone');
+                                // Send only admin-facing refill alert (list of customers)
+                                global.io.to('admin').emit('refill_alert_admin', populated);
+                                // Also send a direct message event to user with the refill message
+                                global.io.to(String(userId)).emit('refill_message', { message: populated.message, notification: populated });
+                            } catch (e) { console.error('predictive socket emit error', e); }
+                        }
+                    } catch (e) { console.error('predictive notif save error', e); }
                 } else {
                     // Reset notification flag if user has refilled
                     await RefillAlert.findOneAndUpdate(

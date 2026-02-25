@@ -16,6 +16,7 @@ import DeliveryProfilePage from './Pages/DeliveryProfilePage';
 
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './Component/PrivateRoute';
+import AdminRoute from './Component/AdminRoute';
 
 function App() {
   return (
@@ -38,8 +39,8 @@ function App() {
           <Route path="/profile" element={<PrivateRoute><Layout><DeliveryProfilePage /></Layout></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Layout><SettingsPage /></Layout></PrivateRoute>} />
           
-          {/* Admin Routes */}
-          <Route path="/admin-panel" element={<PrivateRoute><Layout><AdminDashboard /></Layout></PrivateRoute>} />
+          {/* Admin Routes - only Admin role can access */}
+          <Route path="/admin-panel" element={<AdminRoute><Layout><AdminDashboard /></Layout></AdminRoute>} />
 
         </Routes>
       </BrowserRouter>

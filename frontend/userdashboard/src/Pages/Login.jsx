@@ -20,26 +20,32 @@ const Login = () => {
     
     try {
       const { data } = await authAPI.login({ email, password });
-      
-      if (data.success) {
-        // Prepare user data for context
+
+      // Backend responds with { message, token, user }
+      if (data && data.token && data.user) {
+        const userFromApi = data.user;
+
         const userData = {
-          ...data.user,
-          initials: data.user.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-          role: data.user.role.charAt(0) + data.user.role.slice(1).toLowerCase() // Normalize to User/Admin
+          ...userFromApi,
+          initials: (userFromApi.name || '').split(' ').map(n => n[0] || '').join('').toUpperCase(),
+          role: (userFromApi.role || 'USER').charAt(0) + (userFromApi.role || 'USER').slice(1).toLowerCase()
         };
-        
+
         login(userData, data.token);
 
+        const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3000';
         if (userData.role === 'Admin') {
-          navigate('/admin-panel');
+          window.location.assign(adminUrl);
         } else {
           navigate('/chat');
         }
+      } else {
+        console.error('Unexpected login response:', data);
+        alert('Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert(error.response?.data?.message || "Login failed. Please check your credentials.");
+      alert(error.response?.data?.error || error.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }

@@ -6,15 +6,41 @@ exports.register = async (req, res) => {
     try {
         const { name, email, password, phone, role } = req.body;
 
-        // Hashing password for FR-16
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: "Name, email and password are required." });
+        }
+
+        const roleUpper = role ? String(role).toUpperCase() : 'USER';
+        if (!['USER', 'ADMIN'].includes(roleUpper)) {
+            return res.status(400).json({ error: "Role must be USER or ADMIN." });
+        }
+
+        const emailNorm = email.trim().toLowerCase();
+        const existing = await User.findOne({ email: new RegExp(`^${emailNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+        if (existing) {
+            return res.status(400).json({ error: "This email is already registered. Please login or use a different email." });
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const user = new User({ name, email, password: hashedPassword, phone, role });
+        const user = new User({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password: hashedPassword,
+            phone: phone || '',
+            role: roleUpper
+        });
         await user.save();
         res.status(201).json({ message: "User registered successfully", userId: user._id });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        if (error.code === 11000) {
+            return res.status(400).json({ error: "This email is already registered. Please login or use a different email." });
+        }
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ error: error.message || "Validation failed." });
+        }
+        res.status(400).json({ error: error.message || "Registration failed." });
     }
 };
 

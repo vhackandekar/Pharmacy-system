@@ -29,19 +29,39 @@ exports.refillAlert = async (req, res) => {
         console.log(`n8n Webhook: ${type || 'REFILL'} Alert received for ${medicineName}`);
 
         if (type === 'STOCK_ALERT') {
-            await Notification.create({
+            const notif = await Notification.create({
                 userId: null, // Global alert
                 recipientRole: 'ADMIN',
                 type: 'stock_alert',
                 message: `URGENT: ${medicineName} is low on stock (${stockLeft} left).`
             });
+            try {
+                const NotificationModel = require('../schema/Notification');
+                const populated = await NotificationModel.findById(notif._id).populate('userId', 'name email phone');
+                if (global.io) {
+                    // Admin sees list of customers who need refill
+                    global.io.to('admin').emit('refill_alert_admin', populated);
+                    // Also send direct message to the affected user
+                    if (userId) global.io.to(String(userId)).emit('refill_message', { message: populated.message, notification: populated });
+                }
+            } catch (e) { console.error('socket emit error', e); }
         } else {
-            await Notification.create({
+            const notif = await Notification.create({
                 userId: userId,
                 recipientRole: 'ADMIN',
                 type: 'refill',
                 message: `Refill Recommendation: User running low on ${medicineName} (${daysLeft} days left).`
             });
+            try {
+                const NotificationModel = require('../schema/Notification');
+                const populated = await NotificationModel.findById(notif._id).populate('userId', 'name email phone');
+                if (global.io) {
+                    // Admin-facing alert listing customers
+                    global.io.to('admin').emit('refill_alert_admin', populated);
+                    // Send direct message to user with refill information
+                    if (userId) global.io.to(String(userId)).emit('refill_message', { message: populated.message, notification: populated });
+                }
+            } catch (e) { console.error('socket emit error', e); }
         }
 
         res.json({ status: "success", message: "Admin Dashboard alerted." });

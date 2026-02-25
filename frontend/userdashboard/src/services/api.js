@@ -40,4 +40,13 @@ export const orderAPI = {
   getHistory: (userId) => api.get(`/order/history/${userId}`),
 };
 
+export const adminAPI = {
+  getStats: () => api.get('/admin/dashboard'),
+  getInventory: () => api.get('/admin/inventory'),
+  getAnalytics: () => api.get('/admin/analytics'),
+  getActivity: () => api.get('/admin/activity'),
+  getAllOrders: () => api.get('/admin/orders'),
+  updateOrderStatus: (orderId, status) => api.put(`/admin/orders/${orderId}`, { status }),
+};
+
 export default api;

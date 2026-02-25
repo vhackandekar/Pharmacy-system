@@ -10,6 +10,8 @@ const User = require('./schema/User');
 dotenv.config();
 
 const app = express();
+const http = require('http');
+const { Server } = require('socket.io');
 const authRoutes = require('./routes/authRoutes');
 const agentRoutes = require('./routes/agentRoutes');
 const cartRoutes = require('./routes/cartRoutes');
@@ -30,7 +32,7 @@ app.use((req, res, next) => {
 });
 app.use('/uploads', express.static('uploads'));
 app.use(cors({
-    origin: ['http://localhost:3000'], // Allowed origins
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'], // Allowed origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
     credentials: true // Allow cookies/auth headers
@@ -48,10 +50,15 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 
 const port = process.env.PORT || 5000;
-//database connection
+//database connection – normalize URL (trim + strip quotes so .env parsing is robust)
+const rawUrl = process.env.MONGODB_URL || '';
+const MONGODB_URL = rawUrl.trim().replace(/^["']|["']$/g, '');
+if (!MONGODB_URL.startsWith('mongodb://') && !MONGODB_URL.startsWith('mongodb+srv://')) {
+    console.error('Invalid MONGODB_URL: must start with mongodb:// or mongodb+srv://');
+}
 
 const main = async () => {
-    await mongoose.connect(process.env.MONGODB_URL)
+    await mongoose.connect(MONGODB_URL)
 }
 
 main().then(() => {
@@ -60,7 +67,37 @@ main().then(() => {
     console.log(err)
 });
 
-app.listen(port, () => {
+// Create HTTP server and attach Socket.IO for real-time notifications
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+        methods: ['GET', 'POST']
+    }
+});
+
+// Expose io on global so controllers can emit events without circular imports
+global.io = io;
+
+io.on('connection', (socket) => {
+    console.log('socket connected:', socket.id);
+    // client should send an initial `join` event with { role, userId }
+    socket.on('join', ({ role, userId } = {}) => {
+        try {
+            if (role === 'ADMIN') {
+                socket.join('admin');
+                console.log(`socket ${socket.id} joined admin room`);
+            }
+            if (userId) {
+                socket.join(String(userId));
+                console.log(`socket ${socket.id} joined user room ${userId}`);
+            }
+        } catch (e) { console.error(e); }
+    });
+    socket.on('disconnect', () => { console.log('socket disconnected:', socket.id); });
+});
+
+server.listen(port, () => {
     console.log("server running on ", port);
 });
 

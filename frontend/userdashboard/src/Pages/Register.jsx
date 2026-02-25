@@ -52,7 +52,8 @@ const Register = () => {
       }, 2000);
     } catch (error) {
       console.error("Registration failed:", error);
-      alert(error.response?.data?.message || "Registration failed. Please try again.");
+      const msg = error.response?.data?.error || error.response?.data?.message || error.message || "Registration failed. Please try again.";
+      alert(msg);
       setIsLoading(false);
     }
   };

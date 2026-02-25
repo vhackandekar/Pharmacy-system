@@ -1,29 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, Box, AlertTriangle, Users, TrendingUp, 
-  ArrowUpRight, ArrowDownRight, MoreVertical, Search,
-  Filter, Download, ShieldCheck, Plus
+  ArrowUpRight, ArrowDownRight, Search,
+  Download, ShieldCheck, Plus, Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { Card, Badge, Button } from '../Component/UI';
+import { adminAPI } from '../services/api';
+
+const getStockStatus = (stock) => {
+  if (stock === 0) return 'Critical';
+  if (stock < 20) return 'Low Stock';
+  return 'Healthy';
+};
 
 const AdminDashboard = () => {
   const { theme } = useTheme();
-  
-  const stats = [
-    { label: "Total Revenue", value: "$42,500", trend: "+12.5%", isUp: true },
-    { label: "Active Agents", value: "24", trend: "0%", isUp: true },
-    { label: "Low Stock Items", value: "12", trend: "-2", isUp: false },
-    { label: "Pending Prescriptions", value: "85", trend: "+14", isUp: true }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [inventory, setInventory] = useState([]);
+  const [activity, setActivity] = useState({ recentOrders: [], recentNotifications: [] });
 
-  const inventory = [
-    { id: "INV001", name: "Atorvastatin 40mg", stock: 1200, status: "Healthy", reorder: "2000" },
-    { id: "INV002", name: "Lisinopril 10mg", stock: 45, status: "Low Stock", reorder: "500" },
-    { id: "INV003", name: "Metformin 500mg", stock: 850, status: "Healthy", reorder: "1000" },
-    { id: "INV004", name: "Amoxicillin 250mg", stock: 12, status: "Critical", reorder: "300" }
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [statsRes, analyticsRes, inventoryRes, activityRes] = await Promise.all([
+          adminAPI.getStats(),
+          adminAPI.getAnalytics(),
+          adminAPI.getInventory(),
+          adminAPI.getActivity()
+        ]);
+        setStats(statsRes.data);
+        setAnalytics(analyticsRes.data);
+        setInventory(inventoryRes.data?.medicines ?? []);
+        setActivity({
+          recentOrders: activityRes.data?.recentOrders ?? [],
+          recentNotifications: activityRes.data?.recentNotifications ?? []
+        });
+      } catch (err) {
+        setError(err.response?.data?.error || err.message || 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  const statsCards = stats && analytics ? [
+    { label: "Total Revenue", value: `$${Number(analytics.financials?.totalRevenue ?? 0).toLocaleString()}`, trend: "From orders", isUp: true },
+    { label: "Orders Today", value: String(stats.ordersToday ?? 0), trend: "Today", isUp: true },
+    { label: "Low Stock Items", value: String(stats.lowStockCount ?? 0), trend: "Need attention", isUp: false },
+    { label: "Pending Refills", value: String(stats.pendingRefills ?? 0), trend: "Alerts", isUp: true }
+  ] : [];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-background">
+        <Loader2 className="w-10 h-10 animate-spin text-brand-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-background text-brand-text-primary p-8">
+        <AlertTriangle className="w-12 h-12 text-brand-error mb-4" />
+        <p className="text-brand-error font-bold mb-4">{error}</p>
+        <Button variant="secondary" onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-8 transition-colors duration-500 bg-brand-background text-brand-text-primary">
@@ -59,7 +110,7 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        {stats.map((s, i) => (
+        {statsCards.map((s, i) => (
           <Card key={i} className="flex items-center justify-between group">
              <div>
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">{s.label}</p>
@@ -101,33 +152,38 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-border-color">
-                  {inventory.map((item) => (
-                    <tr key={item.id} className="hover:bg-brand-hover-tint transition-colors group">
-                      <td className="px-6 py-5">
-                        <p className="text-sm font-bold">{item.name}</p>
-                        <p className="text-[10px] opacity-40 font-bold uppercase">SKU: {item.id}</p>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex flex-col space-y-1">
-                           <span className="text-sm font-bold">{item.stock} Units</span>
-                           <div className="w-32 h-1 bg-brand-border-color rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${item.status === 'Healthy' ? 'bg-brand-success' : item.status === 'Low Stock' ? 'bg-brand-warning' : 'bg-brand-error'}`} 
-                                style={{ width: `${Math.min((item.stock/item.reorder)*100, 100)}%` }} 
-                              />
-                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                         <Badge variant={item.status === 'Healthy' ? 'success' : item.status === 'Low Stock' ? 'warning' : 'error'}>
-                            {item.status}
-                         </Badge>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                         <Button variant="secondary" size="sm" className="opacity-40 group-hover:opacity-100">Restock</Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {inventory.map((item) => {
+                    const status = getStockStatus(item.stock);
+                    const reorderLevel = 20;
+                    const pct = item.stock > 0 ? Math.min((item.stock / reorderLevel) * 100, 100) : 0;
+                    return (
+                      <tr key={item._id} className="hover:bg-brand-hover-tint transition-colors group">
+                        <td className="px-6 py-5">
+                          <p className="text-sm font-bold">{item.name}</p>
+                          <p className="text-[10px] opacity-40 font-bold uppercase">{item.dosage || ''} {item.unitType || ''}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex flex-col space-y-1">
+                             <span className="text-sm font-bold">{item.stock} Units</span>
+                             <div className="w-32 h-1 bg-brand-border-color rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${status === 'Healthy' ? 'bg-brand-success' : status === 'Low Stock' ? 'bg-brand-warning' : 'bg-brand-error'}`} 
+                                  style={{ width: `${pct}%` }} 
+                                />
+                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                           <Badge variant={status === 'Healthy' ? 'success' : status === 'Low Stock' ? 'warning' : 'error'}>
+                              {status}
+                           </Badge>
+                        </td>
+                        <td className="px-6 py-5 text-center">
+                           <Button variant="secondary" size="sm" className="opacity-40 group-hover:opacity-100">Restock</Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
              </table>
           </div>
@@ -137,43 +193,58 @@ const AdminDashboard = () => {
         <div className="space-y-8">
            <Card>
               <div className="flex items-center justify-between mb-6">
-                 <h4 className="font-black text-sm uppercase tracking-widest opacity-40 text-brand-primary">Refill Analytics</h4>
+                 <h4 className="font-black text-sm uppercase tracking-widest opacity-40 text-brand-primary">Order Stats</h4>
                  <BarChart3 size={18} className="opacity-40" />
               </div>
               <div className="flex items-end justify-between h-32 space-x-2">
-                 {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
-                    <motion.div 
-                      key={i} 
-                      initial={{ height: 0 }} 
-                      animate={{ height: `${h}%` }}
-                      className="w-full rounded-t-lg transition-all duration-1000 bg-brand-primary/20 hover:bg-brand-secondary" 
-                    />
+                 {analytics?.ordersStats ? [
+                   analytics.ordersStats.total,
+                   analytics.ordersStats.confirmed,
+                   analytics.ordersStats.shipped,
+                   analytics.ordersStats.fulfilled
+                 ].map((val, i) => {
+                   const max = Math.max(analytics.ordersStats.total, 1);
+                   const h = Math.round((val / max) * 100);
+                   return (
+                     <motion.div 
+                       key={i} 
+                       initial={{ height: 0 }} 
+                       animate={{ height: `${h}%` }}
+                       className="w-full rounded-t-lg transition-all duration-1000 bg-brand-primary/20 hover:bg-brand-secondary" 
+                     />
+                   );
+                 }) : [40, 70, 45, 90].map((h, i) => (
+                   <motion.div 
+                     key={i} 
+                     initial={{ height: 0 }} 
+                     animate={{ height: `${h}%` }}
+                     className="w-full rounded-t-lg transition-all duration-1000 bg-brand-primary/20 hover:bg-brand-secondary" 
+                   />
                  ))}
               </div>
               <div className="flex justify-between mt-4 text-[10px] font-black opacity-30 uppercase tracking-tighter">
-                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                 <span>Total</span><span>Confirmed</span><span>Shipped</span><span>Fulfilled</span>
               </div>
            </Card>
 
            <Card>
               <h4 className="font-black text-sm uppercase tracking-widest opacity-40 mb-6 flex items-center">
                  <AlertTriangle size={16} className="text-brand-warning mr-2" />
-                 Low-Efficiency Logs
+                 Recent Activity
               </h4>
               <div className="space-y-6">
-                {[
-                  { agent: "Bot-Alpha", action: "Failed STT Recognition", time: "10 mins ago" },
-                  { agent: "Medic-241", action: "Inventory Mismatch", time: "1 hour ago" },
-                  { agent: "Admin-X", action: "Bulk Refill #401 Approved", time: "2 hours ago" }
-                ].map((log, k) => (
-                  <div key={k} className="flex items-start justify-between">
+                {(activity.recentOrders?.length ? activity.recentOrders.slice(0, 5) : []).map((order) => (
+                  <div key={order._id} className="flex items-start justify-between">
                      <div>
-                        <p className="text-xs font-bold">{log.agent}</p>
-                        <p className="text-[10px] opacity-40 mt-1 font-bold">{log.action}</p>
+                        <p className="text-xs font-bold">Order #{String(order._id).slice(-6)}</p>
+                        <p className="text-[10px] opacity-40 mt-1 font-bold">{order.status} · ${Number(order.totalAmount || 0).toFixed(2)}</p>
                      </div>
-                     <span className="text-[10px] font-black opacity-20 whitespace-nowrap">{log.time}</span>
+                     <span className="text-[10px] font-black opacity-20 whitespace-nowrap">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</span>
                   </div>
                 ))}
+                {(!activity.recentOrders?.length) && (
+                  <p className="text-[10px] opacity-40 font-bold">No recent orders</p>
+                )}
               </div>
               <Button variant="ghost" className="w-full mt-6 text-[10px] font-black uppercase tracking-[0.2em] opacity-40 hover:opacity-100">
                  View System Terminal

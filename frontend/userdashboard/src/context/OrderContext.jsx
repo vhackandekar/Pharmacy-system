@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { io } from 'socket.io-client';
+import { useAuth } from './AuthContext';
 
 const OrderContext = createContext();
 
@@ -35,11 +38,59 @@ export const OrderProvider = ({ children }) => {
     setStats(prev => ({ ...prev, activeOrders: active }));
   }, [orders]);
 
+  const socketRef = useRef(null);
+  const { user } = useAuth();
+
+  // Connect socket for this user to receive order status updates and refill alerts
+  useEffect(() => {
+    if (!user) return;
+    const backend = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+    const socket = io(backend);
+    socketRef.current = socket;
+    socket.emit('join', { userId: user._id });
+
+    socket.on('order_status_updated', ({ order, message }) => {
+      // update or insert order
+      setOrders(prev => {
+        const found = (prev || []).some(o => String(o._id) === String(order._id) || o.id === order._id);
+        if (found) return (prev || []).map(o => (String(o._id) === String(order._id) || o.id === order._id) ? order : o);
+        return [order, ...(prev || [])];
+      });
+    });
+
+    socket.on('refill_alert', (notification) => {
+      // Could be used to show an in-app toast or update notifications list
+      // For now we keep it in local storage or extend as needed
+      console.log('refill_alert', notification);
+    });
+
+    return () => { socket.disconnect(); };
+  }, [user]);
+
   useEffect(() => {
     localStorage.setItem('app-cart', JSON.stringify(cart));
   }, [cart]);
 
-  const placeOrder = (medicine) => {
+  const placeOrder = async (medicine) => {
+    // If user is logged in, POST to backend so admin receives real-time event
+    if (user && user._id) {
+      try {
+        const backend = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const payload = {
+          userId: user._id,
+          items: [{ medicineId: medicine._id || medicine.id, quantity: medicine.qty || 1 }],
+          totalAmount: medicine.price || 0
+        };
+        const res = await axios.post(`${backend}/api/order/place`, payload);
+        const created = res.data;
+        setOrders(prev => [created, ...(prev || [])]);
+        return created;
+      } catch (e) {
+        console.error('placeOrder network error', e);
+        // fallback to local optimistic order
+      }
+    }
+
     const newOrder = {
       id: Math.floor(Math.random() * 900 + 100).toString(),
       name: medicine.name,
