@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   MapPin, CreditCard, User, Phone, Home, Building2,
@@ -6,42 +6,71 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { useDeliveryProfile } from '../context/DeliveryProfileContext';
+import { authAPI } from '../services/api';
 import { Button, Badge } from '../Component/UI';
 
 const paymentMethods = [
   { id: 'card', label: 'Credit / Debit Card', icon: CreditCard, desc: 'Visa, Mastercard, RuPay' },
-  { id: 'upi',  label: 'UPI',                 icon: Wallet,     desc: 'GPay, PhonePe, Paytm' },
-  { id: 'cod',  label: 'Cash on Delivery',    icon: Truck,      desc: 'Pay when you receive' },
-  { id: 'net',  label: 'Net Banking',          icon: Landmark,   desc: 'All major banks' },
+  { id: 'upi', label: 'UPI', icon: Wallet, desc: 'GPay, PhonePe, Paytm' },
+  { id: 'cod', label: 'Cash on Delivery', icon: Truck, desc: 'Pay when you receive' },
+  { id: 'net', label: 'Net Banking', icon: Landmark, desc: 'All major banks' },
 ];
-
 const DeliveryProfilePage = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
-  const { profile, saveProfile } = useDeliveryProfile();
-  
-  // Use user details if profile is empty
   const [form, setForm] = useState({
-    ...profile,
-    name: profile.name || user?.name || '',
-    phone: profile.phone || user?.phone || ''
+    name: '',
+    phone: '',
+    address1: '',
+    address2: '',
+    city: '',
+    state: '',
+    pin: '',
+    payment: 'card'
   });
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await authAPI.getProfile();
+        setForm(prev => ({
+          ...prev,
+          name: data.name || '',
+          phone: data.phone || '',
+          address1: data.address1 || '',
+          address2: data.address2 || '',
+          city: data.city || '',
+          state: data.state || '',
+          pin: data.pin || '',
+          payment: data.preferredPayment || 'card'
+        }));
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const cardBase = `rounded-2xl p-6 border ${theme === 'dark' ? 'bg-white/3 border-white/8' : 'bg-white border-slate-100 shadow-sm'}`;
-  const inputBase = `w-full rounded-xl px-4 py-3 text-sm font-medium border outline-none transition-all focus:ring-2 ${
-    theme === 'dark'
-      ? 'bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-brand-primary/30 focus:border-brand-primary/50'
-      : 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-brand-primary/20 focus:border-brand-primary/50'
-  }`;
+  const inputBase = `w-full rounded-xl px-4 py-3 text-sm font-medium border outline-none transition-all focus:ring-2 ${theme === 'dark'
+    ? 'bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-brand-primary/30 focus:border-brand-primary/50'
+    : 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:ring-brand-primary/20 focus:border-brand-primary/50'
+    }`;
 
   const set = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
 
-  const handleSave = () => {
-    saveProfile(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    try {
+      await authAPI.updateProfile({
+        ...form,
+        preferredPayment: form.payment
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    }
   };
 
   return (
@@ -122,15 +151,14 @@ const DeliveryProfilePage = () => {
                 <button
                   key={method.id}
                   onClick={() => set('payment', method.id)}
-                  className={`flex items-center space-x-4 p-4 rounded-xl border text-left transition-all ${
-                    isSelected
-                      ? theme === 'dark'
-                        ? 'bg-brand-primary/15 border-brand-primary/40 text-brand-primary'
-                        : 'bg-brand-primary/8 border-brand-primary/30 text-brand-primary'
-                      : theme === 'dark'
-                        ? 'bg-white/3 border-white/8 hover:border-white/20 text-slate-400'
-                        : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-500'
-                  }`}
+                  className={`flex items-center space-x-4 p-4 rounded-xl border text-left transition-all ${isSelected
+                    ? theme === 'dark'
+                      ? 'bg-brand-primary/15 border-brand-primary/40 text-brand-primary'
+                      : 'bg-brand-primary/8 border-brand-primary/30 text-brand-primary'
+                    : theme === 'dark'
+                      ? 'bg-white/3 border-white/8 hover:border-white/20 text-slate-400'
+                      : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-500'
+                    }`}
                 >
                   <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-primary/20' : theme === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>
                     <Icon size={18} />

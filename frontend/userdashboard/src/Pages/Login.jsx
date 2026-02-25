@@ -17,35 +17,31 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const { data } = await authAPI.login({ email, password });
 
-      // Backend responds with { message, token, user }
-      if (data && data.token && data.user) {
-        const userFromApi = data.user;
-
+      if (data.token) {
+        // Prepare user data for context
         const userData = {
-          ...userFromApi,
-          initials: (userFromApi.name || '').split(' ').map(n => n[0] || '').join('').toUpperCase(),
-          role: (userFromApi.role || 'USER').charAt(0) + (userFromApi.role || 'USER').slice(1).toLowerCase()
+          ...data.user,
+          initials: data.user.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          // Backend returns role like 'USER' or 'ADMIN', normalize for UI
+          role: data.user.role === 'ADMIN' ? 'Admin' : 'User'
         };
 
         login(userData, data.token);
 
-        const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3000';
         if (userData.role === 'Admin') {
-          window.location.assign(adminUrl);
+          navigate('/admin-panel');
         } else {
           navigate('/chat');
         }
-      } else {
-        console.error('Unexpected login response:', data);
-        alert('Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert(error.response?.data?.error || error.response?.data?.message || "Login failed. Please check your credentials.");
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || "Login failed. Please check your credentials.";
+      alert(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -58,12 +54,12 @@ const Login = () => {
         <motion.div
           animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="bg-shape w-72 h-72 bg-purple-900/10 top-[-5%] left-[-5%] blur-[120px]" 
+          className="bg-shape w-72 h-72 bg-purple-900/10 top-[-5%] left-[-5%] blur-[120px]"
         />
         <motion.div
           animate={{ x: [0, -50, 0], y: [0, 30, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="bg-shape w-96 h-96 bg-indigo-900/10 bottom-[-10%] right-[-5%] blur-[120px]" 
+          className="bg-shape w-96 h-96 bg-indigo-900/10 bottom-[-10%] right-[-5%] blur-[120px]"
         />
       </div>
 
@@ -150,7 +146,7 @@ const Login = () => {
 
           {/* Additional Links */}
           <div className="flex items-center justify-end px-1">
-            <button 
+            <button
               type="button"
               onClick={() => navigate('/forgot-password')}
               className="text-white/40 text-xs font-bold hover:text-white transition-colors"

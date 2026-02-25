@@ -10,7 +10,7 @@ const Header = () => {
   const { theme } = useTheme();
   const { user, logout } = useAuth();
   const { isCollapsed, toggleSidebar, toggleMobileSidebar } = useSidebar();
-  const { cart } = useOrders();
+  const { cart, notifications, markNotificationAsRead, markAllNotificationsAsRead } = useOrders();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +26,7 @@ const Header = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {/* Sidebar Toggle Button */}
-          <button 
+          <button
             onClick={() => {
               if (window.innerWidth < 1024) {
                 toggleMobileSidebar();
@@ -40,13 +40,13 @@ const Header = () => {
               {isCollapsed ? <PanelLeft size={22} /> : <PanelLeftClose size={22} />}
             </div>
           </button>
-          
+
           {/* Search Bar */}
           <div className="relative group hidden md:block">
             <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-brand-text-secondary group-focus-within:text-brand-primary' : 'text-slate-400 group-focus-within:text-brand-primary'}`} size={18} />
-            <input 
-              type="text" 
-              placeholder="Search prescriptions, orders..." 
+            <input
+              type="text"
+              placeholder="Search prescriptions, orders..."
               className={`pl-12 pr-6 py-2.5 w-[320px] rounded-[1rem] text-sm font-medium border transition-all placeholder:opacity-40 focus:outline-none focus:ring-4 ${theme === 'dark' ? 'bg-white/5 border-white/10 focus:ring-brand-primary/20 focus:border-brand-primary/50' : 'bg-slate-50 border-slate-200 focus:ring-blue-500/10 focus:border-blue-500/50'}`}
             />
           </div>
@@ -72,33 +72,52 @@ const Header = () => {
             trigger={
               <button className={`relative p-2.5 rounded-xl transition-all active:scale-95 ${theme === 'dark' ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                 <Bell size={22} />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-primary border-2 border-brand-card shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
+                {notifications.some(n => !n.isRead) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-primary border-2 border-brand-card shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
+                )}
               </button>
             }
           >
             <div className="flex flex-col max-h-[480px]">
               <div className="p-4 border-b border-brand-border-color flex items-center justify-between bg-brand-hover-tint/30">
                 <h4 className="text-sm font-black uppercase tracking-widest">Notifications</h4>
-                <button className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline">Mark all as read</button>
+                <button
+                  className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                  onClick={() => markAllNotificationsAsRead()}
+                >
+                  Mark all as read
+                </button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto py-2 no-scrollbar">
-                {[
-                  { id: 1, title: 'Refill Alert', message: 'Your order #101 is ready for pick up.', time: '2m ago', unread: true },
-                  { id: 2, title: 'New Message', message: 'Agent Sarah has replied to your query.', time: '1h ago', unread: true },
-                  { id: 3, title: 'Prescription Approved', message: 'Your upload for "Metformin" was verified.', time: '3h ago', unread: false },
-                ].map((notif) => (
-                  <div key={notif.id} className={`flex items-start space-x-4 px-4 py-4 hover:bg-brand-hover-tint transition-colors cursor-pointer relative group ${notif.unread ? 'bg-brand-primary/[0.03]' : ''}`}>
-                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notif.unread ? 'bg-brand-primary shadow-[0_0_8px_rgba(37,99,235,0.4)]' : 'bg-transparent'}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <p className={`text-xs font-black truncate ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{notif.title}</p>
-                        <span className="text-[9px] font-bold opacity-30 whitespace-nowrap ml-2">{notif.time}</span>
-                      </div>
-                      <p className="text-[11px] font-medium leading-relaxed text-brand-text-secondary line-clamp-2">{notif.message}</p>
-                    </div>
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center opacity-40">
+                    <p className="text-xs font-bold italic">No notifications yet</p>
                   </div>
-                ))}
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif._id}
+                      onClick={() => !notif.isRead && markNotificationAsRead(notif._id)}
+                      className={`flex items-start space-x-4 px-4 py-4 hover:bg-brand-hover-tint transition-colors cursor-pointer relative group ${!notif.isRead ? 'bg-brand-primary/[0.03]' : ''}`}
+                    >
+                      <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${!notif.isRead ? 'bg-brand-primary shadow-[0_0_8px_rgba(37,99,235,0.4)]' : 'bg-transparent'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <p className={`text-xs font-black uppercase tracking-wider ${theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                            {notif.type?.replace('_', ' ') || 'System Alert'}
+                          </p>
+                          <span className="text-[9px] font-bold opacity-30 whitespace-nowrap ml-2">
+                            {new Date(notif.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className={`text-[11px] font-medium leading-relaxed ${!notif.isRead ? 'text-brand-text-primary' : 'text-brand-text-secondary'} line-clamp-2`}>
+                          {notif.message}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               <div className="p-3 bg-brand-hover-tint/20 border-t border-brand-border-color">

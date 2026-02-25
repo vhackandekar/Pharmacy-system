@@ -16,35 +16,32 @@ import DeliveryProfilePage from './Pages/DeliveryProfilePage';
 
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './Component/PrivateRoute';
-import AdminRoute from './Component/AdminRoute';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Auth Routes */}
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-otp" element={<OTPVerification />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+    <BrowserRouter>
+      <Routes>
+        {/* Auth Routes */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-otp" element={<OTPVerification />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* Dashboard Routes wrapped in Layout and PrivateRoute */}
-          <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
-          <Route path="/chat" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
-          <Route path="/orders" element={<PrivateRoute><Layout><MyOrders /></Layout></PrivateRoute>} />
-          <Route path="/cart" element={<PrivateRoute><Layout><CartPage /></Layout></PrivateRoute>} />
-          <Route path="/history" element={<PrivateRoute><Layout><HistoryPage /></Layout></PrivateRoute>} />
-          <Route path="/upload" element={<PrivateRoute><Layout><UploadPage /></Layout></PrivateRoute>} />
-          <Route path="/profile" element={<PrivateRoute><Layout><DeliveryProfilePage /></Layout></PrivateRoute>} />
-          <Route path="/settings" element={<PrivateRoute><Layout><SettingsPage /></Layout></PrivateRoute>} />
-          
-          {/* Admin Routes - only Admin role can access */}
-          <Route path="/admin-panel" element={<AdminRoute><Layout><AdminDashboard /></Layout></AdminRoute>} />
+        {/* Dashboard Routes wrapped in Layout and PrivateRoute */}
+        <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
+        <Route path="/chat" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
+        <Route path="/orders" element={<PrivateRoute><Layout><MyOrders /></Layout></PrivateRoute>} />
+        <Route path="/cart" element={<PrivateRoute><Layout><CartPage /></Layout></PrivateRoute>} />
+        <Route path="/history" element={<PrivateRoute><Layout><HistoryPage /></Layout></PrivateRoute>} />
+        <Route path="/upload" element={<PrivateRoute><Layout><UploadPage /></Layout></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Layout><DeliveryProfilePage /></Layout></PrivateRoute>} />
+        <Route path="/settings" element={<PrivateRoute><Layout><SettingsPage /></Layout></PrivateRoute>} />
 
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        {/* Admin Routes */}
+        <Route path="/admin-panel" element={<PrivateRoute><Layout><AdminDashboard /></Layout></PrivateRoute>} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 

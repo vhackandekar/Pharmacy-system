@@ -25,6 +25,21 @@ export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
   getProfile: () => api.get('/auth/profile'),
+  updateProfile: (profileData) => api.put('/auth/profile', profileData),
+};
+
+export const cartAPI = {
+  get: () => api.get('/cart'),
+  add: (item) => api.post('/cart/add', item),
+  update: (item) => api.put('/cart/update', item),
+  remove: (medicineId) => api.delete('/cart/remove', { data: { medicineId } }),
+  clear: (cartId) => api.delete('/cart/clear', { data: { cartId } }),
+};
+
+export const notificationAPI = {
+  getUserNotifications: (userId) => api.get(`/notify/user/${userId}`),
+  markAsRead: (id) => api.put(`/notify/${id}/read`),
+  markAllAsRead: (userId, role) => api.post('/notify/mark-all-read', { userId, role }),
 };
 
 export const agentAPI = {
@@ -40,13 +55,12 @@ export const orderAPI = {
   getHistory: (userId) => api.get(`/order/history/${userId}`),
 };
 
-export const adminAPI = {
-  getStats: () => api.get('/admin/dashboard'),
-  getInventory: () => api.get('/admin/inventory'),
-  getAnalytics: () => api.get('/admin/analytics'),
-  getActivity: () => api.get('/admin/activity'),
-  getAllOrders: () => api.get('/admin/orders'),
-  updateOrderStatus: (orderId, status) => api.put(`/admin/orders/${orderId}`, { status }),
+export const prescriptionAPI = {
+  upload: (formData) => api.post('/prescription/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
+
+
 
 export default api;

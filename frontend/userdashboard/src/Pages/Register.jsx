@@ -24,7 +24,7 @@ const Register = () => {
       alert("Passwords do not match!");
       return;
     }
-    
+
     setIsLoading(true);
 
     try {
@@ -34,26 +34,19 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
         role: formData.role.toUpperCase(), // Normalize to USER/ADMIN
-        phone: "+91 98765 43210" // Default phone for now
+        phone: "0000000000" // Placeholder phone
       });
 
-      // Prepare user data for context (though we might wait for login or OTP)
-      const userData = {
-        name: formData.fullName,
-        role: formData.role,
-        initials: formData.fullName.split(' ').map(name => name[0]).join('').toUpperCase()
-      };
-      
-      // Notify user and navigate
+      // Notify user and navigate to login
       setShowPopup(true);
       setTimeout(() => {
         setIsLoading(false);
-        navigate('/verify-otp');
+        navigate('/'); // Go to login after successful registration
       }, 2000);
     } catch (error) {
       console.error("Registration failed:", error);
-      const msg = error.response?.data?.error || error.response?.data?.message || error.message || "Registration failed. Please try again.";
-      alert(msg);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || "Registration failed. Please try again.";
+      alert(errorMsg);
       setIsLoading(false);
     }
   };
