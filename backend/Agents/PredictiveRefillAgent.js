@@ -6,18 +6,27 @@ const User = require('../schema/User');
 const Notification = require('../schema/Notification');
 const axios = require('axios');
 
+const langfuse = require('../utils/langfuseClient');
+
 class PredictiveRefillAgent {
     constructor() {
         if (process.env.GEMINI_API_KEY) {
             this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            this.geminiModel = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            this.geminiModel = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         }
         if (process.env.GROQ_API_KEY) {
             this.groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         }
+        this.langfuse = langfuse;
     }
 
-    async analyzeAndAlert(userId) {
+    async analyzeAndAlert(userId, parentTrace = null) {
+        // --- LANGFUSE TRACE START ---
+        const trace = parentTrace || (this.langfuse ? this.langfuse.trace({
+            name: "predictive-refill-analysis",
+            userId: userId.toString(),
+        }) : null);
+
         try {
             const history = await Order.find({ userId }).populate('items.medicineId');
             if (!history || history.length === 0) return { message: "No history to analyze." };
@@ -28,6 +37,13 @@ class PredictiveRefillAgent {
         Current Date: ${new Date().toISOString()}
         Return ONLY a JSON array: [{"medicineId": "string", "medicineName": "string", "daysLeft": number, "predictionReason": "string"}]
       `;
+
+            // --- LANGFUSE GENERATION START ---
+            const generation = trace ? trace.generation({
+                name: "PredictiveRefillAgent",
+                model: this.groq ? "llama-3.3-70b-versatile" : "gemini-2.0-flash",
+                input: prompt
+            }) : null;
 
             let predictions = null;
 
@@ -42,7 +58,21 @@ class PredictiveRefillAgent {
                     const content = JSON.parse(chatCompletion.choices[0].message.content);
                     predictions = content.predictions || content; // Handle varying JSON structures
                 } catch (e) {
-                    console.error("Groq Refill Prediction Failed:", e.message);
+                    console.error("Groq Refill Prediction Failed (Primary):", e.message);
+                    if (e.status === 429) {
+                        try {
+                            console.log("Using Groq Fallback (Llama 3.1 8b) for Refill Analysis...");
+                            const fallbackComp = await this.groq.chat.completions.create({
+                                messages: [{ role: "user", content: prompt }],
+                                model: "llama-3.1-8b-instant",
+                                response_format: { type: "json_object" }
+                            });
+                            const content = JSON.parse(fallbackComp.choices[0].message.content);
+                            predictions = content.predictions || content;
+                        } catch (fallbackErr) {
+                            console.error("Groq Refill Fallback Failed:", fallbackErr.message);
+                        }
+                    }
                 }
             }
 
@@ -51,13 +81,23 @@ class PredictiveRefillAgent {
                 try {
                     const result = await this.geminiModel.generateContent(prompt);
                     let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-                    predictions = JSON.parse(text);
+                    const content = JSON.parse(text);
+                    predictions = content.predictions || content;
                 } catch (e) {
                     console.error("Gemini Refill Prediction Failed:", e.message);
                 }
             }
 
-            if (!predictions || !Array.isArray(predictions)) return [];
+            if (generation) {
+                generation.end({
+                    output: JSON.stringify(predictions)
+                });
+            }
+
+            if (!predictions || !Array.isArray(predictions)) {
+                if (trace) await this.langfuse.flushAsync();
+                return [];
+            }
 
             const user = await User.findById(userId);
             for (const pred of predictions) {
@@ -71,7 +111,7 @@ class PredictiveRefillAgent {
                     await RefillAlert.findOneAndUpdate(
                         { userId, medicineId: pred.medicineId },
                         { daysLeft: pred.daysLeft, notified: true },
-                        { upsert: true, new: true }
+                        { upsert: true, returnDocument: 'after' }
                     );
 
                     if (process.env.N8N_REFILL_WEBHOOK_URL) {
@@ -99,8 +139,16 @@ class PredictiveRefillAgent {
                 }
             }
 
+            if (trace) await this.langfuse.flushAsync();
             return predictions;
         } catch (error) {
+            if (trace) {
+                trace.update({
+                    statusMessage: error.message,
+                    metadata: { error: true }
+                });
+                await this.langfuse.flushAsync();
+            }
             console.error("PredictiveRefillAgent Error:", error);
             return [];
         }

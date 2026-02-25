@@ -8,7 +8,18 @@ const orderSchema = new mongoose.Schema({
         dosagePerDay: { type: String, required: true }, // e.g., '2 tablets' or '10ml per day'
     }],
     totalAmount: { type: Number, required: true },
-    status: { type: String, enum: ['CONFIRMED', 'REJECTED', 'IN_WAREHOUSE', 'SHIPPED', 'FULFILLED'], default: 'CONFIRMED' },
+    status: {
+        type: String,
+        enum: ['Awaiting Payment', 'Placed', 'CONFIRMED', 'REJECTED', 'IN_WAREHOUSE', 'SHIPPED', 'FULFILLED', 'Cancelled'],
+        default: 'Awaiting Payment'
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Pending', 'Paid', 'Failed'],
+        default: 'Pending'
+    },
+    paymentMethod: { type: String },
+    transactionId: { type: String },
     orderDate: { type: Date, default: Date.now },
     estimatedEndDate: { type: Date }, // Automatically calculated based on dosage & quantity
 }, { timestamps: true });

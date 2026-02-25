@@ -40,3 +40,32 @@ exports.updateOrderStatus = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.triggerRefillAnalysis = async (req, res) => {
+    const User = require('../schema/User');
+    const PredictiveRefillAgent = require('../Agents/PredictiveRefillAgent');
+
+    try {
+        console.log('Manually triggering predictive refill analysis...');
+        const users = await User.find({ role: 'USER' });
+        const results = [];
+
+        for (const user of users) {
+            const analysis = await PredictiveRefillAgent.analyzeAndAlert(user._id);
+            results.push({
+                userId: user._id,
+                name: user.name,
+                predictionsCount: Array.isArray(analysis) ? analysis.length : 0
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Manual refill analysis completed.',
+            results
+        });
+    } catch (error) {
+        console.error('Manual Refill Analysis Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
