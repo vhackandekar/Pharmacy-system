@@ -64,7 +64,7 @@ const Register = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-purple-900/20 blur-[100px] rounded-full"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-purple-900/20 blur-[100px] rounded-full"></div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -88,7 +88,7 @@ const Register = () => {
               autoComplete="off"
               placeholder="John Doe"
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             />
           </div>
 
@@ -100,7 +100,7 @@ const Register = () => {
               autoComplete="off"
               placeholder="example@gmail.com"
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
@@ -113,7 +113,7 @@ const Register = () => {
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -123,7 +123,7 @@ const Register = () => {
                 required
                 placeholder="••••••••"
                 className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ const Register = () => {
             <label className="text-xs font-medium text-purple-300/70 ml-1">Select Role</label>
             <select
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 appearance-none cursor-pointer"
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               value={formData.role}
             >
               <option value="User">User</option>
@@ -151,7 +151,7 @@ const Register = () => {
 
         <p className="text-center text-xs text-purple-300/40 pt-2">
           Already have an account?{' '}
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="text-purple-400 font-semibold hover:text-purple-300 transition-colors ml-1"
           >

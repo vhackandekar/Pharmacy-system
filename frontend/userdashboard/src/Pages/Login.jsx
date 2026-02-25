@@ -55,12 +55,12 @@ const Login = () => {
     <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0b14] flex items-center justify-center p-4">
       {/* Background Animated Shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
+        <motion.div
           animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           className="bg-shape w-72 h-72 bg-purple-900/10 top-[-5%] left-[-5%] blur-[120px]" 
         />
-        <motion.div 
+        <motion.div
           animate={{ x: [0, -50, 0], y: [0, 30, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className="bg-shape w-96 h-96 bg-indigo-900/10 bottom-[-10%] right-[-5%] blur-[120px]" 
@@ -182,7 +182,7 @@ const Login = () => {
           {/* Sign Up Link */}
           <p className="text-center text-[11px] font-bold text-white/30 pt-1">
             Don't have an account?{' '}
-            <button 
+            <button
               onClick={() => navigate('/register')}
               className="text-purple-500 hover:text-purple-400 transition-colors ml-1"
             >

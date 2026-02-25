@@ -21,7 +21,6 @@ const prescriptionRoutes = require('./routes/prescriptionRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const webhookRoutes = require('./routes/webhookRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
 
 //midlewares
 app.use(express.json());
@@ -47,7 +46,6 @@ app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/notify', notificationRoutes);
 app.use('/webhook/n8n', webhookRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/payment', paymentRoutes);
 
 const port = process.env.PORT || 5000;
 //database connection – normalize URL (trim + strip quotes so .env parsing is robust)
@@ -58,14 +56,13 @@ if (!MONGODB_URL.startsWith('mongodb://') && !MONGODB_URL.startsWith('mongodb+sr
 }
 
 const main = async () => {
-    await mongoose.connect(MONGODB_URL)
-}
-
-main().then(() => {
-    console.log("connected succesfully to the database")
-}).catch((err) => {
-    console.log(err)
-});
+    try {
+        console.log("Connecting to MongoDB...");
+        await mongoose.connect(process.env.MONGODB_URL, {
+            serverSelectionTimeoutMS: 20000, // Increase timeout to 20s
+            family: 4 // Use IPv4
+        });
+        console.log("Connected successfully to the database");
 
 // Create HTTP server and attach Socket.IO for real-time notifications
 const server = http.createServer(app);
@@ -100,6 +97,17 @@ io.on('connection', (socket) => {
 server.listen(port, () => {
     console.log("server running on ", port);
 });
+        app.listen(port, () => {
+            console.log("Server running on port", port);
+        });
+    } catch (err) {
+        console.error("Critical: Database connection failed!");
+        console.error(err);
+        process.exit(1); // Exit if DB connection fails on startup
+    }
+};
+
+main();
 
 // FR-9: Predictive Refill Cron Job (Runs every day at Midnight)
 cron.schedule('0 0 * * *', async () => {
