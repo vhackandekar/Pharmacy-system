@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../services/api';
 
 const Register = () => {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
@@ -15,18 +18,37 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate OTP generation and notify user
-    setTimeout(() => {
-      setIsLoading(false);
+
+    try {
+      // Call backend registration
+      await authAPI.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role.toUpperCase(), // Normalize to USER/ADMIN
+        phone: "0000000000" // Placeholder phone
+      });
+
+      // Notify user and navigate to login
       setShowPopup(true);
-      // Wait for user to see popup then redirect
       setTimeout(() => {
-        navigate('/verify-otp');
+        setIsLoading(false);
+        navigate('/'); // Go to login after successful registration
       }, 2000);
-    }, 1500);
+    } catch (error) {
+      console.error("Registration failed:", error);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || "Registration failed. Please try again.";
+      alert(errorMsg);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -35,7 +57,7 @@ const Register = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-purple-900/20 blur-[100px] rounded-full"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-purple-900/20 blur-[100px] rounded-full"></div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -59,7 +81,7 @@ const Register = () => {
               autoComplete="off"
               placeholder="John Doe"
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-              onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
             />
           </div>
 
@@ -71,7 +93,7 @@ const Register = () => {
               autoComplete="off"
               placeholder="example@gmail.com"
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
@@ -84,7 +106,7 @@ const Register = () => {
                 autoComplete="new-password"
                 placeholder="••••••••"
                 className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
@@ -94,7 +116,7 @@ const Register = () => {
                 required
                 placeholder="••••••••"
                 className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 placeholder:text-purple-300/20"
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
             </div>
           </div>
@@ -103,7 +125,7 @@ const Register = () => {
             <label className="text-xs font-medium text-purple-300/70 ml-1">Select Role</label>
             <select
               className="w-full bg-[#141225] border border-purple-800 text-white rounded-lg px-4 py-3 text-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-500/40 outline-none transition-all duration-300 appearance-none cursor-pointer"
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               value={formData.role}
             >
               <option value="User">User</option>
@@ -122,7 +144,7 @@ const Register = () => {
 
         <p className="text-center text-xs text-purple-300/40 pt-2">
           Already have an account?{' '}
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="text-purple-400 font-semibold hover:text-purple-300 transition-colors ml-1"
           >

@@ -47,9 +47,26 @@ exports.login = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
     try {
-        // In a real app, userId comes from decoded JWT middleware
         const userId = req.user ? req.user.id : req.query.userId;
         const user = await User.findById(userId).select('-password');
+        if (!user) return res.status(404).json({ error: "User not found" });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const userId = req.user ? req.user.id : req.body.userId;
+        const updates = req.body;
+
+        // Remove sensitive fields if present
+        delete updates.password;
+        delete updates.role;
+        delete updates.email;
+
+        const user = await User.findByIdAndUpdate(userId, updates, { new: true }).select('-password');
         if (!user) return res.status(404).json({ error: "User not found" });
         res.json(user);
     } catch (error) {

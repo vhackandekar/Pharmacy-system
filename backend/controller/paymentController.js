@@ -13,14 +13,17 @@ exports.processPayment = async (req, res) => {
         // Simulating 2 second delay for payment gateway
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Update Order to PAID (if we had a paid status) or mark as FULFILLED
-        order.status = 'FULFILLED';
+        order.paymentStatus = 'Paid';
+        order.status = 'Placed';
+        order.transactionId = "TXN_" + Math.random().toString(36).substr(2, 9).toUpperCase();
+        order.paymentMethod = paymentMethod || order.paymentMethod;
         await order.save();
 
         res.json({
             success: true,
-            message: "Payment successful. Order is now being fulfilled.",
-            transactionId: "TXN_" + Math.random().toString(36).substr(2, 9).toUpperCase()
+            message: "Payment successful. Your order has been placed.",
+            order,
+            transactionId: order.transactionId
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

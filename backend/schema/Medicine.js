@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const medicineSchema = new mongoose.Schema({
+    productId: { type: String },
     name: { type: String, required: true },
-    dosage: { type: String, required: true },
-    unitType: { type: String, required: true }, // e.g., 'tablets', 'ml'
-    stock: { type: Number, required: true, default: 0 },
+    pzn: { type: String },
+    packageSize: { type: String },
+    dosage: { type: String },
+    unitType: { type: String }, // e.g., 'tablets', 'ml'
+    description: { type: String },
+    stock: { type: Number, required: true, default: 50 },
     lowStockNotified: { type: Boolean, default: false },
     price: { type: Number, required: true, default: 0 },
     prescriptionRequired: { type: Boolean, default: false },

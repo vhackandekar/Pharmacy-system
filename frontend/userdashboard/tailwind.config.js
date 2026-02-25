@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,7 +8,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        'deep-black': '#0B0F19',
+        'brand': {
+          'primary': 'var(--color-primary)',
+          'secondary': 'var(--color-secondary)',
+          'accent': 'var(--color-accent)',
+          'soft-accent': 'var(--color-soft-accent)',
+          'background': 'var(--color-bg)',
+          'card': 'var(--color-card)',
+          'text-primary': 'var(--color-text-primary)',
+          'text-secondary': 'var(--color-text-secondary)',
+          'border-color': 'var(--color-border)',
+          'success': 'var(--color-success)',
+          'warning': 'var(--color-warning)',
+          'error': 'var(--color-error)',
+          'hover-tint': 'var(--color-hover)',
+          'sidebar': {
+            'bg': 'var(--sidebar-bg)',
+            'text': 'var(--sidebar-text)',
+            'text-muted': 'var(--sidebar-text-muted)',
+            'hover': 'var(--sidebar-hover)',
+            'active': 'var(--sidebar-active)',
+            'border': 'var(--sidebar-border)',
+          }
+        },
+        'deep-black': '#0B0F19', // Keeping for backward compat if needed
         'neon-purple': '#A855F7',
         'electric-purple': '#7C3AED',
         'deep-purple': '#4C1D95',

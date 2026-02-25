@@ -2,49 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, .light {
+  /* Light Theme - High-Visibility blue/green palette */
+  --color-bg: #f8fafc;
+  --color-primary: #1e40af; /* Deep Royal Blue */
+  --color-secondary: #3b82f6; /* Azure Blue */
+  --color-accent: #10b981; /* Emerald Green */
+  --color-soft-accent: #ecfdf5;
+  --color-card: #ffffff;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-border: #e2e8f0;
+  --color-hover: #f1f5f9;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+
+  /* Sidebar Specific (Elegant Blue) */
+  --sidebar-bg: #1e3a8a;
+  --sidebar-text: #ffffff;
+  --sidebar-text-muted: #94a3b8;
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-active: #3b82f6;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark {
+  /* Dark Theme - Futuristic Deep Black/Purple */
+  --color-bg: #030712;
+  --color-primary: #8b5cf6;
+  --color-secondary: #7c3aed;
+  --color-accent: #a855f7;
+  --color-soft-accent: rgba(139, 92, 246, 0.1);
+  --color-card: #0f172a;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(139, 92, 246, 0.2);
+  --color-hover: rgba(139, 92, 246, 0.05);
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Sidebar Specific */
+  --sidebar-bg: #030712;
+  --sidebar-text: #f8fafc;
+  --sidebar-text-muted: #64748b;
+  --sidebar-hover: rgba(139, 92, 246, 0.1);
+  --sidebar-active: #8b5cf6;
+  --sidebar-border: rgba(139, 92, 246, 0.15);
+}
+
+/* Base Body Styles */
+body {
+  @apply bg-brand-background text-brand-text-primary;
+  font-feature-settings: "cv02", "cv05", "cv11";
+  letter-spacing: -0.011em;
+  margin: 0;
+  padding: 0;
+}
+
 @layer base {
-  body {
-    background-color: #0B0F19;
-    @apply text-white;
-    margin: 0;
-    min-height: 100vh;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-  ::selection {
-    background-color: rgba(168, 85, 247, 0.3);
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tighter font-black;
+    letter-spacing: -0.025em;
   }
 }
 
 @layer components {
+  .typography-heading {
+    @apply font-black tracking-tighter;
+    line-height: 1.1;
+  }
+  
+  .typography-body {
+    @apply font-medium leading-relaxed opacity-80;
+  }
+
+  .typography-small {
+    @apply text-[10px] font-black uppercase tracking-[0.2em] opacity-40;
+  }
+
+  .glass-container {
+    @apply backdrop-blur-md bg-white/70 dark:bg-slate-900/60 border border-white/20 dark:border-white/10;
+  }
+  
   .glass-card {
-    background-color: rgba(11, 15, 25, 0.6);
-    @apply backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply backdrop-blur-lg bg-white/80 dark:bg-slate-900/70 border border-white/30 dark:border-white/10 shadow-xl;
+  }
+  
+  .neon-glow-purple {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
   }
 
-  .neon-glow-text {
-    text-shadow: 0 0 10px rgba(168, 85, 247, 0.4), 0 0 20px rgba(168, 85, 247, 0.2);
+  .neon-glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
 
-  .neon-border-focus {
-    @apply focus:ring-1 focus:ring-neon-purple/40 focus:border-neon-purple/40 outline-none transition-all duration-300;
+  .futuristic-gradient {
+    @apply bg-gradient-to-br from-brand-primary to-brand-secondary;
   }
 
-  .neon-underline {
-    @apply relative overflow-hidden;
-  }
-
-  .neon-underline::after {
-    content: '';
-    @apply absolute bottom-0 left-0 w-full h-[1px] bg-neon-purple transform scale-x-0 transition-transform duration-300 origin-right;
-  }
-
-  .neon-underline:hover::after {
-    @apply scale-x-100 origin-left;
+  .sidebar-link-hover {
+    @apply hover:bg-white/10 transition-all duration-300;
   }
 }
 
-/* Custom Background Shapes (Smaller and subtler) */
-.bg-shape {
-  @apply absolute rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-float;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-brand-border-color rounded-full;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 

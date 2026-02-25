@@ -1,21 +1,45 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './Component/Layout';
 import Login from './Pages/Login';
 import Register from './Pages/Register';
 import OTPVerification from './Pages/OTPVerification';
 import ForgotPassword from './Pages/ForgotPassword';
 import UserDashboard from './Pages/UserDashboard';
 import AdminDashboard from './Pages/AdminDashboard';
+import MyOrders from './Pages/MyOrders';
+import ChatPage from './Pages/ChatPage';
+import CartPage from './Pages/CartPage';
+import SettingsPage from './Pages/Settings';
+import HistoryPage from './Pages/History';
+import UploadPage from './Pages/Upload';
+import DeliveryProfilePage from './Pages/DeliveryProfilePage';
+
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './Component/PrivateRoute';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Auth Routes */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<OTPVerification />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/dashboard" element={<UserDashboard />} />
-        <Route path="/admin-panel" element={<AdminDashboard />} />
+
+        {/* Dashboard Routes wrapped in Layout and PrivateRoute */}
+        <Route path="/dashboard" element={<Navigate to="/chat" replace />} />
+        <Route path="/chat" element={<PrivateRoute><Layout><ChatPage /></Layout></PrivateRoute>} />
+        <Route path="/orders" element={<PrivateRoute><Layout><MyOrders /></Layout></PrivateRoute>} />
+        <Route path="/cart" element={<PrivateRoute><Layout><CartPage /></Layout></PrivateRoute>} />
+        <Route path="/history" element={<PrivateRoute><Layout><HistoryPage /></Layout></PrivateRoute>} />
+        <Route path="/upload" element={<PrivateRoute><Layout><UploadPage /></Layout></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Layout><DeliveryProfilePage /></Layout></PrivateRoute>} />
+        <Route path="/settings" element={<PrivateRoute><Layout><SettingsPage /></Layout></PrivateRoute>} />
+
+        {/* Admin Routes */}
+        <Route path="/admin-panel" element={<PrivateRoute><Layout><AdminDashboard /></Layout></PrivateRoute>} />
+
       </Routes>
     </BrowserRouter>
   );
